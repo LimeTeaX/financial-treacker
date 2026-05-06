@@ -175,10 +175,11 @@ export default function MessagePage({ onBack }) {
             <div className="flex items-center gap-3">
               <button 
                 onClick={onBack}
-                className="mr-1 text-slate-400 hover:text-slate-600 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#8B5CF6] text-white text-sm font-medium hover:bg-violet-700 transition-colors"
               >
-                <ChevronLeft size={20} />
+                ← Dashboard
               </button>
+              
               <div className="relative">
                 <span
                   className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold ${selectedContact.avatarBg}`}
