@@ -18,16 +18,16 @@ import {
 } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { icon: Home, label: 'Home', active: true, badge: null },
-  { icon: MessageSquare, label: 'Message', active: false, badge: 26 },
-  { icon: BarChart2, label: 'Analytics', active: false, badge: null },
-  { icon: ArrowLeftRight, label: 'Transaction', active: false, badge: null },
-  { icon: CreditCard, label: 'Payment', active: false, badge: 12 },
+  { id: 'home', icon: Home, label: 'Home', active: true, badge: null },
+  { id: 'messages', icon: MessageSquare, label: 'Message', active: false, badge: 26 },
+  { id: 'analytics', icon: BarChart2, label: 'Analytics', active: false, badge: null },
+  { id: 'transactions', icon: ArrowLeftRight, label: 'Transaction', active: false, badge: null },
+  { id: 'payment', icon: CreditCard, label: 'Payment', active: false, badge: 12 },
 ]
 
 const ACCOUNT_ITEMS = [
-  { icon: TrendingUp, label: 'Activity', active: false, badge: null },
-  { icon: Headphones, label: 'Support', active: false, badge: null },
+  { id: 'activity', icon: TrendingUp, label: 'Activity', active: false, badge: null },
+  { id: 'support', icon: Headphones, label: 'Support', active: false, badge: null },
 ]
 
 const STATS = [
@@ -145,7 +145,7 @@ function NavItem({ icon: Icon, label, active, badge, onClick }) {
       </span>
       <span className="flex-1 text-sm">{label}</span>
       {badge && (
-        <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-slate-200 px-1.5 text-[10px] font-semibold text-slate-600">
+        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-200 px-1.5 text-[10px] font-semibold text-slate-600">
           {badge}
         </span>
       )}
@@ -307,6 +307,7 @@ function SpendingGauge() {
 
 export default function Dashboard() {
   const [activePage, setActivePage] = useState('dashboard')
+  const [activeTab, setActiveTab] = useState('home')
   const [activeGoal, setActiveGoal] = useState('First home')
   const [txSort, setTxSort] = useState('Newest')
 
@@ -341,7 +342,9 @@ export default function Dashboard() {
             <NavItem
               key={item.label}
               {...item}
+                active={item.id === activeTab}
                 onClick={() => {
+                  setActiveTab(item.id)
                   if (item.label === 'Message') setActivePage('messages')
                   if (item.label === 'Home') setActivePage('dashboard')
                 }}
@@ -356,7 +359,11 @@ export default function Dashboard() {
               </p>
               <nav className="space-y-1">
                 {ACCOUNT_ITEMS.map((item) => (
-                  <NavItem key={item.label} {...item} />
+                  <NavItem key={item.label}
+                  {...item}
+                  active={ activeTab === item.id }
+                  onClick={() => setActiveTab(item.id)}
+                  />
                 ))}
               </nav>
             </div>
