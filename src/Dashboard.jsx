@@ -1,4 +1,6 @@
 import MessagePage from './pages/MessagePage'
+import Analytics from './pages/Analytics'
+import TransactionPage from './pages/TransactionPage'
 import { useState } from 'react'
 import {
   Home,
@@ -306,262 +308,99 @@ function SpendingGauge() {
 }
 
 export default function Dashboard() {
-  const [activePage, setActivePage] = useState('dashboard')
-  const [activeTab, setActiveTab] = useState('home')
   const [activeGoal, setActiveGoal] = useState('First home')
   const [txSort, setTxSort] = useState('Newest')
 
-  if (activePage === 'messages') {
   return (
-    <MessagePage onBack={() => setActivePage('dashboard')} />
-  )
-  }
-
-  return (
-    <div
-      className="min-h-screen bg-[#F8FAFC] text-slate-900"
-      style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}
-    >
-      <div className="mx-auto flex h-full min-h-screen max-w-[1600px] gap-5 p-5">
-        {/* ── Sidebar ── */}
-        <aside className="w-[260px] shrink-0 flex flex-col gap-6 rounded-3xl bg-white p-5 border border-slate-100 shadow-sm">
-          <div className="flex items-center gap-2.5 px-2 pt-1 pb-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#8B5CF6] text-white text-xs font-bold">
-              T
-            </span>
-            <span className="font-bold text-slate-800 text-lg tracking-tight">Thrive</span>
+    <div className="mx-auto max-w-[1600px] gap-5">
+      {/* ── Main Content ── */}
+      <div className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
+            <p className="text-slate-500 mt-1">Welcome back! Here's what's happening with your finances.</p>
           </div>
+          <button className="inline-flex items-center gap-2 rounded-2xl bg-[#8B5CF6] px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 transition-colors">
+            <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2">
+              <path d="M12 4v16m8-8H4" />
+            </svg>
+            Add Transaction
+          </button>
+        </div>
 
-          <div className="flex-1 flex flex-col gap-6">
-            <div>
-              <p className="px-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-3">
-                Main Menu
-              </p>
-              <nav className="space-y-1">
-          {NAV_ITEMS.map((item) => (
-            <NavItem
-              key={item.label}
-              {...item}
-                active={item.id === activeTab}
-                onClick={() => {
-                  setActiveTab(item.id)
-                  if (item.label === 'Message') setActivePage('messages')
-                  if (item.label === 'Home') setActivePage('dashboard')
-                }}
-            />
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {STATS.map((stat, i) => (
+            <StatCard key={i} {...stat} />
           ))}
-          </nav>
-            </div>
+        </div>
 
-            <div>
-              <p className="px-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-3">
-                Account Management
-              </p>
-              <nav className="space-y-1">
-                {ACCOUNT_ITEMS.map((item) => (
-                  <NavItem key={item.label}
-                  {...item}
-                  active={ activeTab === item.id }
-                  onClick={() => setActiveTab(item.id)}
-                  />
-                ))}
-              </nav>
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <div className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-slate-900">Income vs Expenses</h2>
+              <button className="text-slate-300 hover:text-slate-500 transition-colors">
+                <MoreHorizontal size={18} />
+              </button>
+            </div>
+            <BarChart />
+          </div>
+
+          <div className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-slate-900">Spending Breakdown</h2>
+              <button className="text-slate-300 hover:text-slate-500 transition-colors">
+                <MoreHorizontal size={18} />
+              </button>
+            </div>
+            <SpendingGauge />
+          </div>
+        </div>
+
+        {/* Transactions */}
+        <div className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-slate-900">Recent Transactions</h2>
+            <div className="flex items-center gap-2">
+              <select
+                value={txSort}
+                onChange={(e) => setTxSort(e.target.value)}
+                className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
+              >
+                <option>Newest</option>
+                <option>Oldest</option>
+                <option>Highest</option>
+                <option>Lowest</option>
+              </select>
+              <button className="text-slate-300 hover:text-slate-500 transition-colors">
+                <MoreHorizontal size={18} />
+              </button>
             </div>
           </div>
 
-          <div className="space-y-1 border-t border-slate-100 pt-4">
-            <button className="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors text-sm">
-              <Settings size={15} />
-              <span>Setting</span>
-            </button>
-            <button className="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors text-sm">
-              <LogOut size={15} />
-              <span>Log out</span>
-            </button>
-          </div>
-        </aside>
-
-        {/* ── Main Content ── */}
-        <main className="flex-1 min-w-0 flex flex-col gap-5">
-          {/* Header */}
-          <header className="flex items-center justify-between rounded-3xl bg-white px-7 py-5 border border-slate-100 shadow-sm">
-            <div>
-              <p className="text-sm text-slate-400 font-medium">Welcome back</p>
-              <h1 className="mt-0.5 text-2xl font-bold text-slate-900 tracking-tight">
-                Welcome to dashboard
-              </h1>
-            </div>
-            <div className="flex items-center gap-3">
-              <button className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-slate-500 hover:bg-slate-100 transition-colors border border-slate-100">
-                <Mail size={16} />
-              </button>
-              <button className="relative inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-slate-500 hover:bg-slate-100 transition-colors border border-slate-100">
-                <Bell size={16} />
-                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-[#8B5CF6] ring-2 ring-white" />
-              </button>
-              <div className="flex items-center gap-2.5 rounded-2xl bg-slate-50 px-3 py-2 border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-300 to-rose-200 flex items-center justify-center text-xs font-bold text-white">
-                  EL
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-800 leading-none">Eddie Lake</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Dashboard user</p>
-                </div>
-                <ChevronDown size={14} className="text-slate-400 ml-1" />
-              </div>
-            </div>
-          </header>
-
-          {/* Stats Row */}
-          <section className="grid grid-cols-3 gap-5">
-            {STATS.map((s) => (
-              <StatCard key={s.label} {...s} />
-            ))}
-          </section>
-
-          {/* Charts Row */}
-          <section className="grid gap-5 xl:grid-cols-[1.75fr_1fr]">
-            <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-slate-400 font-medium">Available Balance</p>
-                  <p className="mt-1 text-2xl font-bold text-slate-900 tracking-tight">
-                    $24,450.00
-                  </p>
-                </div>
-                <button className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500 border border-slate-100 hover:bg-slate-100 transition-colors">
-                  Week <ChevronDown size={12} />
-                </button>
-              </div>
-              <BarChart />
-            </article>
-
-            <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-slate-400 font-medium">Spendings</p>
-                  <div className="flex items-baseline gap-2 mt-1">
-                    <p className="text-2xl font-bold text-slate-900 tracking-tight">$1,232</p>
-                    <span className="text-xs font-semibold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full">
-                      +3.4%
-                    </span>
+          <div className="space-y-3">
+            {TRANSACTIONS.map((tx, i) => (
+              <div key={i} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
+                <div className="flex items-center gap-3">
+                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold ${tx.avatarBg}`}>
+                    {tx.avatar}
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{tx.name}</p>
+                    <p className="text-xs text-slate-400">{tx.date}</p>
                   </div>
                 </div>
-                <button className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500 border border-slate-100 hover:bg-slate-100 transition-colors">
-                  <Calendar size={11} /> Last 30 Days
-                </button>
-              </div>
-              <SpendingGauge />
-            </article>
-          </section>
-
-          {/* Bottom Row */}
-          <section className="grid gap-5 xl:grid-cols-[0.85fr_1.4fr]">
-            {/* Finance Goal */}
-            <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm flex flex-col">
-              <p className="text-sm font-medium text-slate-500">Tracking your finance goal</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {['First home', 'New car', 'Vacation'].map((goal) => (
-                  <button
-                    key={goal}
-                    onClick={() => setActiveGoal(goal)}
-                    className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-200 border ${
-                      activeGoal === goal
-                        ? 'bg-[#8B5CF6] text-white border-[#8B5CF6]'
-                        : 'border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
-                  >
-                    {goal}
-                  </button>
-                ))}
-              </div>
-              <div className="mt-6">
-                <p className="text-4xl font-bold text-slate-900 tracking-tight">$3,190</p>
-                <span className="mt-3 inline-flex rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-[#8B5CF6]">
-                  On track
-                </span>
-              </div>
-              <div className="mt-6">
-                <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-[#8B5CF6]"
-                    style={{ width: '13.3%' }}
-                  />
+                <div className="text-right">
+                  <p className={`text-sm font-semibold ${tx.status === 'Completed' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                    {tx.status}
+                  </p>
+                  <p className="text-sm font-bold text-slate-900">{tx.amount}</p>
                 </div>
               </div>
-              <div className="mt-4 flex items-center justify-between text-xs text-slate-400">
-                <span>Future savings: $700</span>
-                <span>Target: $24,000</span>
-              </div>
-            </article>
-
-            {/* Transactions */}
-            <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
-              <div className="flex items-center justify-between mb-5">
-                <p className="text-lg font-bold text-slate-900">Transactions</p>
-                <div className="flex gap-1.5 rounded-2xl bg-slate-50 p-1 border border-slate-100">
-                  {['Newest', 'Oldest'].map((opt) => (
-                    <button
-                      key={opt}
-                      onClick={() => setTxSort(opt)}
-                      className={`rounded-xl px-4 py-1.5 text-xs font-semibold transition-all duration-200 ${
-                        txSort === opt
-                          ? 'bg-white text-slate-800 shadow-sm border border-slate-100'
-                          : 'text-slate-400 hover:text-slate-600'
-                      }`}
-                    >
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100">
-                    {['Name', 'Status', 'Date', 'Amount'].map((h) => (
-                      <th
-                        key={h}
-                        className="pb-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider first:pl-0 last:text-right"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {TRANSACTIONS.map((tx) => (
-                    <tr key={tx.name} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3.5 pr-4">
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${tx.avatarBg}`}
-                          >
-                            {tx.avatar}
-                          </span>
-                          <span className="font-medium text-slate-800 text-sm">{tx.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-3.5 pr-4">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                            tx.status === 'Completed'
-                              ? 'bg-emerald-50 text-emerald-600'
-                              : 'bg-orange-50 text-orange-500'
-                          }`}
-                        >
-                          {tx.status}
-                        </span>
-                      </td>
-                      <td className="py-3.5 pr-4 text-slate-400 text-xs">{tx.date}</td>
-                      <td className="py-3.5 text-right font-bold text-slate-800">{tx.amount}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </article>
-          </section>
-        </main>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )
