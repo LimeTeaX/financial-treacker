@@ -390,6 +390,21 @@ export default function Dashboard() {
   const [txSort, setTxSort] = useState("Newest");
   const { transactions } = useAppContext();
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form, setForm] = useState({
+    merchant: "",
+    category: "Food",
+    amount: "",
+    type: "expense",
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log("New transaction:", form);
+    setIsModalOpen(false);
+    setForm({ merchant: "", category: "Food", amount: "", type: "expense" });
+  };
+
   return (
     <div className="mx-auto max-w-[1600px] gap-5">
       {/* ── Main Content ── */}
@@ -502,6 +517,113 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md border border-slate-100 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-slate-900">
+                Add Transaction
+              </h2>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Merchant
+                </label>
+                <input
+                  type="text"
+                  value={form.merchant}
+                  onChange={(e) =>
+                    setForm({ ...form, merchant: e.target.value })
+                  }
+                  placeholder="Warung Just Is Resto"
+                  required
+                  className="w-full mt-1 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Category
+                </label>
+                <select
+                  value={form.category}
+                  onChange={(e) =>
+                    setForm({ ...form, category: e.target.value })
+                  }
+                  className="w-full mt-1 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
+                >
+                  <option>Food</option>
+                  <option>Transport</option>
+                  <option>Gaming</option>
+                  <option>Internet</option>
+                  <option>Subscription</option>
+                  <option>Shopping</option>
+                  <option>Salary</option>
+                  <option>Education</option>
+                  <option>Entertainment</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Amount (Rp)
+                </label>
+                <input
+                  type="number"
+                  value={form.amount}
+                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                  placeholder="50000"
+                  required
+                  className="w-full mt-1 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Type
+                </label>
+                <div className="flex gap-2 mt-1">
+                  {["expense", "income"].map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setForm({ ...form, type })}
+                      className={`flex-1 rounded-xl px-4 py-2 text-sm font-medium transition-colors ${form.type === type ? "bg-[#8B5CF6] text-white" : "bg-slate-50 text-slate-500 border border-slate-100"}`}
+                    >
+                      {type === "expense" ? "Expense (-)" : "Income (+)"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 rounded-xl bg-[#8B5CF6] py-2.5 text-sm font-medium text-white hover:bg-violet-700 transition-colors"
+                >
+                  Add Transaction
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
