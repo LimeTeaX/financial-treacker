@@ -7,6 +7,7 @@ import TransactionPage from './pages/TransactionPage'
 import PaymentPage from './pages/PaymentPage'
 import ActivityPage from './pages/ActivityPage'
 import ProfilePage from './pages/ProfilePage'
+import SettingPage from './pages/SettingPage'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('Dashboard')
@@ -23,6 +24,7 @@ function App() {
           {currentPage === 'Payment' && <PaymentPage />}
           {currentPage === 'Activity' && <ActivityPage />}
           {currentPage === 'Profile' && <ProfilePage />}
+          {currentPage === 'Setting' && <SettingPage />}
         </div>
       </main>
     </div>

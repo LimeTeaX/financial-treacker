@@ -1,7 +1,7 @@
-import MessagePage from './pages/MessagePage'
-import Analytics from './pages/Analytics'
-import TransactionPage from './pages/TransactionPage'
-import { useState } from 'react'
+import MessagePage from "./pages/MessagePage";
+import Analytics from "./pages/Analytics";
+import { useAppContext } from "./context/AppContext";
+import { useState } from "react";
 import {
   Home,
   MessageSquare,
@@ -17,116 +17,172 @@ import {
   LogOut,
   MoreHorizontal,
   Calendar,
-} from 'lucide-react'
+  Plus,
+  X,
+} from "lucide-react";
 
 const NAV_ITEMS = [
-  { id: 'home', icon: Home, label: 'Home', active: true, badge: null },
-  { id: 'messages', icon: MessageSquare, label: 'Message', active: false, badge: 26 },
-  { id: 'analytics', icon: BarChart2, label: 'Analytics', active: false, badge: null },
-  { id: 'transactions', icon: ArrowLeftRight, label: 'Transaction', active: false, badge: null },
-  { id: 'payment', icon: CreditCard, label: 'Payment', active: false, badge: 12 },
-]
+  { id: "home", icon: Home, label: "Home", active: true, badge: null },
+  {
+    id: "messages",
+    icon: MessageSquare,
+    label: "Message",
+    active: false,
+    badge: 26,
+  },
+  {
+    id: "analytics",
+    icon: BarChart2,
+    label: "Analytics",
+    active: false,
+    badge: null,
+  },
+  {
+    id: "transactions",
+    icon: ArrowLeftRight,
+    label: "Transaction",
+    active: false,
+    badge: null,
+  },
+  {
+    id: "payment",
+    icon: CreditCard,
+    label: "Payment",
+    active: false,
+    badge: 12,
+  },
+];
 
 const ACCOUNT_ITEMS = [
-  { id: 'activity', icon: TrendingUp, label: 'Activity', active: false, badge: null },
-  { id: 'support', icon: Headphones, label: 'Support', active: false, badge: null },
-]
+  {
+    id: "activity",
+    icon: TrendingUp,
+    label: "Activity",
+    active: false,
+    badge: null,
+  },
+  {
+    id: "support",
+    icon: Headphones,
+    label: "Support",
+    active: false,
+    badge: null,
+  },
+];
 
 const STATS = [
   {
-    label: 'Balance',
-    value: '$32,3900',
-    change: '+7.4%',
+    label: "Balance",
+    value: "$32,3900",
+    change: "+7.4%",
     positive: true,
-    sub: 'than last month',
-    color: 'bg-violet-100',
-    iconColor: 'text-violet-500',
+    sub: "than last month",
+    color: "bg-violet-100",
+    iconColor: "text-violet-500",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        className="w-5 h-5"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="12" cy="12" r="10" />
         <path d="M12 6v6l4 2" />
       </svg>
     ),
   },
   {
-    label: 'Spending',
-    value: '$24,4601',
-    change: '+3.4%',
+    label: "Spending",
+    value: "$24,4601",
+    change: "+3.4%",
     positive: false,
-    sub: 'than last month',
-    color: 'bg-rose-100',
-    iconColor: 'text-rose-400',
+    sub: "than last month",
+    color: "bg-rose-100",
+    iconColor: "text-rose-400",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        className="w-5 h-5"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
         <path d="M12 6v6l4 2" />
       </svg>
     ),
   },
   {
-    label: 'Investment',
-    value: '$21,8722',
-    change: '+11.4%',
+    label: "Investment",
+    value: "$21,8722",
+    change: "+11.4%",
     positive: true,
-    sub: 'than last month',
-    color: 'bg-amber-100',
-    iconColor: 'text-amber-500',
+    sub: "than last month",
+    color: "bg-amber-100",
+    iconColor: "text-amber-500",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        className="w-5 h-5"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
         <polyline points="16 7 22 7 22 13" />
       </svg>
     ),
   },
-]
+];
 
 const BAR_DATA = [
-  { month: 'Jan', income: 62, scheduled: 48, expenses: 38 },
-  { month: 'Feb', income: 55, scheduled: 60, expenses: 42 },
-  { month: 'Mar', income: 70, scheduled: 52, expenses: 55 },
-  { month: 'Apr', income: 85, scheduled: 78, expenses: 60 },
-  { month: 'May', income: 58, scheduled: 45, expenses: 35 },
-  { month: 'Jun', income: 72, scheduled: 65, expenses: 50 },
-  { month: 'Jul', income: 68, scheduled: 55, expenses: 45 },
-  { month: 'Aug', income: 60, scheduled: 50, expenses: 40 },
-  { month: 'Sep', income: 65, scheduled: 58, expenses: 48 },
-  { month: 'Oct', income: 75, scheduled: 62, expenses: 52 },
-]
+  { month: "Jan", income: 62, scheduled: 48, expenses: 38 },
+  { month: "Feb", income: 55, scheduled: 60, expenses: 42 },
+  { month: "Mar", income: 70, scheduled: 52, expenses: 55 },
+  { month: "Apr", income: 85, scheduled: 78, expenses: 60 },
+  { month: "May", income: 58, scheduled: 45, expenses: 35 },
+  { month: "Jun", income: 72, scheduled: 65, expenses: 50 },
+  { month: "Jul", income: 68, scheduled: 55, expenses: 45 },
+  { month: "Aug", income: 60, scheduled: 50, expenses: 40 },
+  { month: "Sep", income: 65, scheduled: 58, expenses: 48 },
+  { month: "Oct", income: 75, scheduled: 62, expenses: 52 },
+];
 
 const TRANSACTIONS = [
   {
-    name: 'Iva Ryan',
-    status: 'In progress',
-    date: '22 Jan, 2024',
-    amount: '$12,334',
-    avatar: 'IR',
-    avatarBg: 'bg-rose-200 text-rose-700',
+    name: "Iva Ryan",
+    status: "In progress",
+    date: "22 Jan, 2024",
+    amount: "$12,334",
+    avatar: "IR",
+    avatarBg: "bg-rose-200 text-rose-700",
   },
   {
-    name: 'Kurt Bates',
-    status: 'Completed',
-    date: '02 Feb, 2024',
-    amount: '$20,652',
-    avatar: 'KB',
-    avatarBg: 'bg-blue-200 text-blue-700',
+    name: "Kurt Bates",
+    status: "Completed",
+    date: "02 Feb, 2024",
+    amount: "$20,652",
+    avatar: "KB",
+    avatarBg: "bg-blue-200 text-blue-700",
   },
   {
-    name: 'James Hall',
-    status: 'In progress',
-    date: '18 May, 2024',
-    amount: '$16,328',
-    avatar: 'JH',
-    avatarBg: 'bg-amber-200 text-amber-700',
+    name: "James Hall",
+    status: "In progress",
+    date: "18 May, 2024",
+    amount: "$16,328",
+    avatar: "JH",
+    avatarBg: "bg-amber-200 text-amber-700",
   },
   {
-    name: 'Kenneth Allen',
-    status: 'Completed',
-    date: '19 Jan, 2024',
-    amount: '$17,652',
-    avatar: 'KA',
-    avatarBg: 'bg-emerald-200 text-emerald-700',
+    name: "Kenneth Allen",
+    status: "Completed",
+    date: "19 Jan, 2024",
+    amount: "$17,652",
+    avatar: "KA",
+    avatarBg: "bg-emerald-200 text-emerald-700",
   },
-]
+];
 
 function NavItem({ icon: Icon, label, active, badge, onClick }) {
   return (
@@ -134,13 +190,15 @@ function NavItem({ icon: Icon, label, active, badge, onClick }) {
       onClick={onClick}
       className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition-all duration-200 ${
         active
-          ? 'bg-violet-50 border-l-[3px] border-[#8B5CF6] text-[#8B5CF6] font-semibold pl-[13px]'
-          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+          ? "bg-violet-50 border-l-[3px] border-[#8B5CF6] text-[#8B5CF6] font-semibold pl-[13px]"
+          : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
       }`}
     >
       <span
         className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${
-          active ? 'bg-violet-100 text-[#8B5CF6]' : 'bg-slate-100 text-slate-500'
+          active
+            ? "bg-violet-100 text-[#8B5CF6]"
+            : "bg-slate-100 text-slate-500"
         }`}
       >
         <Icon size={16} />
@@ -152,10 +210,19 @@ function NavItem({ icon: Icon, label, active, badge, onClick }) {
         </span>
       )}
     </button>
-  )
+  );
 }
 
-function StatCard({ label, value, change, positive, sub, color, iconColor, icon }) {
+function StatCard({
+  label,
+  value,
+  change,
+  positive,
+  sub,
+  color,
+  iconColor,
+  icon,
+}) {
   return (
     <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm flex flex-col gap-4">
       <div className="flex items-start justify-between">
@@ -170,20 +237,24 @@ function StatCard({ label, value, change, positive, sub, color, iconColor, icon 
       </div>
       <div>
         <p className="text-sm font-medium text-slate-400">{label}</p>
-        <p className="mt-1.5 text-2xl font-bold text-slate-900 tracking-tight">{value}</p>
+        <p className="mt-1.5 text-2xl font-bold text-slate-900 tracking-tight">
+          {value}
+        </p>
         <p className="mt-2 flex items-center gap-1.5 text-xs">
-          <span className={`font-semibold ${positive ? 'text-emerald-500' : 'text-rose-500'}`}>
+          <span
+            className={`font-semibold ${positive ? "text-emerald-500" : "text-rose-500"}`}
+          >
             {change}
           </span>
           <span className="text-slate-400">{sub}</span>
         </p>
       </div>
     </article>
-  )
+  );
 }
 
 function BarChart() {
-  const maxVal = 100
+  const maxVal = 100;
   return (
     <div className="mt-6">
       <div className="flex items-center gap-5 text-xs text-slate-400 mb-4">
@@ -202,7 +273,7 @@ function BarChart() {
       </div>
       <div className="relative h-52">
         <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[10px] text-slate-300 pointer-events-none pr-2 w-8">
-          {['10k', '10k', '10k', '10k', '0k'].map((l, i) => (
+          {["10k", "10k", "10k", "10k", "0k"].map((l, i) => (
             <span key={i}>{l}</span>
           ))}
         </div>
@@ -229,19 +300,21 @@ function BarChart() {
                   style={{ height: `${(d.expenses / maxVal) * 140}px` }}
                 />
               </div>
-              <span className="text-[9px] text-slate-300 mt-1.5">{d.month}</span>
+              <span className="text-[9px] text-slate-300 mt-1.5">
+                {d.month}
+              </span>
             </div>
           ))}
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function SpendingGauge() {
-  const r = 90
-  const strokeWidth = 22
-  const circumference = Math.PI * r
+  const r = 90;
+  const strokeWidth = 22;
+  const circumference = Math.PI * r;
 
   return (
     <div className="flex flex-col items-center mt-4">
@@ -260,7 +333,12 @@ function SpendingGauge() {
         </span>
       </div>
       <div className="relative w-[220px] h-[120px] overflow-hidden">
-        <svg width="220" height="220" viewBox="0 0 220 120" className="absolute top-0 left-0">
+        <svg
+          width="220"
+          height="220"
+          viewBox="0 0 220 120"
+          className="absolute top-0 left-0"
+        >
           <path
             d="M 20 110 A 90 90 0 0 1 200 110"
             fill="none"
@@ -283,7 +361,7 @@ function SpendingGauge() {
             stroke="#ddd6fe"
             strokeWidth={strokeWidth}
             strokeLinecap="butt"
-            strokeDasharray={`${0.30 * circumference} ${circumference}`}
+            strokeDasharray={`${0.3 * circumference} ${circumference}`}
             strokeDashoffset={`${-0.45 * circumference}`}
           />
           <path
@@ -304,12 +382,13 @@ function SpendingGauge() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default function Dashboard() {
-  const [activeGoal, setActiveGoal] = useState('First home')
-  const [txSort, setTxSort] = useState('Newest')
+  const [activeGoal, setActiveGoal] = useState("First home");
+  const [txSort, setTxSort] = useState("Newest");
+  const { transactions } = useAppContext();
 
   return (
     <div className="mx-auto max-w-[1600px] gap-5">
@@ -317,14 +396,18 @@ export default function Dashboard() {
       <div className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
-            <p className="text-slate-500 mt-1">Welcome back! Here's what's happening with your finances.</p>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+              Dashboard
+            </h1>
+            <p className="text-slate-500 mt-1">
+              Welcome back! Here's what's happening with your finances.
+            </p>
           </div>
-          <button className="inline-flex items-center gap-2 rounded-2xl bg-[#8B5CF6] px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 transition-colors">
-            <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="currentColor" strokeWidth="2">
-              <path d="M12 4v16m8-8H4" />
-            </svg>
-            Add Transaction
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 rounded-xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-700 transition-colors"
+          >
+            <Plus size={16} /> Add Transaction
           </button>
         </div>
 
@@ -339,7 +422,9 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <div className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-slate-900">Income vs Expenses</h2>
+              <h2 className="text-lg font-semibold text-slate-900">
+                Income vs Expenses
+              </h2>
               <button className="text-slate-300 hover:text-slate-500 transition-colors">
                 <MoreHorizontal size={18} />
               </button>
@@ -349,7 +434,9 @@ export default function Dashboard() {
 
           <div className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-slate-900">Spending Breakdown</h2>
+              <h2 className="text-lg font-semibold text-slate-900">
+                Spending Breakdown
+              </h2>
               <button className="text-slate-300 hover:text-slate-500 transition-colors">
                 <MoreHorizontal size={18} />
               </button>
@@ -361,7 +448,9 @@ export default function Dashboard() {
         {/* Transactions */}
         <div className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-slate-900">Recent Transactions</h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Recent Transactions
+            </h2>
             <div className="flex items-center gap-2">
               <select
                 value={txSort}
@@ -381,21 +470,32 @@ export default function Dashboard() {
 
           <div className="space-y-3">
             {TRANSACTIONS.map((tx, i) => (
-              <div key={i} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
+              <div
+                key={i}
+                className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0"
+              >
                 <div className="flex items-center gap-3">
-                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold ${tx.avatarBg}`}>
+                  <span
+                    className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold ${tx.avatarBg}`}
+                  >
                     {tx.avatar}
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-slate-800">{tx.name}</p>
+                    <p className="text-sm font-semibold text-slate-800">
+                      {tx.name}
+                    </p>
                     <p className="text-xs text-slate-400">{tx.date}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`text-sm font-semibold ${tx.status === 'Completed' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                  <p
+                    className={`text-sm font-semibold ${tx.status === "Completed" ? "text-emerald-500" : "text-amber-500"}`}
+                  >
                     {tx.status}
                   </p>
-                  <p className="text-sm font-bold text-slate-900">{tx.amount}</p>
+                  <p className="text-sm font-bold text-slate-900">
+                    {tx.amount}
+                  </p>
                 </div>
               </div>
             ))}
@@ -403,5 +503,5 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
-  )
+  );
 }
