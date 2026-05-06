@@ -20,7 +20,7 @@ const NAV_ITEMS = [
 
 const ACCOUNT_ITEMS = [
   { id: 'activity', icon: TrendingUp, label: 'Activity', page: 'Activity' },
-  { id: 'support', icon: Headphones, label: 'Support', page: null },
+  { id: 'profile', icon: Headphones, label: 'Profile', page: 'Profile' },
 ]
 
 function NavItem({ icon: Icon, label, active, badge, onClick }) {
