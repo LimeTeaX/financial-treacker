@@ -65,7 +65,7 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
   const activeTab = getActiveTab()
 
   return (
-    <aside className="fixed h-screen top-0 left-0 w-[260px] shrink-0 flex flex-col gap-6 rounded-3xl bg-white p-5 border border-slate-100 shadow-sm z-10">
+    <aside className="fixed h-screen top-0 left-0 w-[260px] shrink-0 flex flex-col gap-6 rounded-3xl bg-white p-5 border border-slate-100 shadow-sm z-20 overflow-y-auto">
       <div className="flex items-center gap-2.5 px-2 pt-1 pb-2">
         <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#8B5CF6] text-white text-xs font-bold">
           T

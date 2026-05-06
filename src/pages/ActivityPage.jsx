@@ -1,23 +1,10 @@
-// src/pages/ActivityPage.jsx
 import { useState, useMemo } from 'react'
 import {
-  TrendingUp,
-  TrendingDown,
-  Clock,
-  Calendar,
-  Activity,
-  Zap,
-  Coffee,
-  Utensils,
-  ShoppingBag,
-  Gamepad2,
-  Wifi,
-  ArrowUpRight,
-  ArrowDownRight,
-  DollarSign,
-  ChevronUp,
-  ChevronDown,
+  TrendingUp, TrendingDown, Clock, Calendar, Activity,
+  Zap, Coffee, Utensils, ShoppingBag, Gamepad2, Wifi,
+  DollarSign, ChevronUp, ChevronDown,
 } from 'lucide-react'
+import { TRANSACTIONS, filterByPeriod } from '../data/transactions'
 
 // ── MOCK DATA ──
 const RECENT_LOGS = [
@@ -102,11 +89,27 @@ const WEEKLY_CASHFLOW = [
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 // ── HEATMAP COMPONENT ──
-function ActivityHeatmap() {
-  const months = ['Feb', 'Mar', 'Apr']
+function ActivityHeatmap({ transactions }) {
+  const heatmapData = useMemo(() => {
+    const data = []
+    const now = new Date()
+    const startDate = new Date(now)
+    startDate.setDate(now.getDate() - 84)
+    
+    for (let i = 0; i < 84; i++) {
+      const d = new Date(startDate)
+      d.setDate(d.getDate() + i)
+      const dateStr = d.toISOString().split('T')[0]
+      const dayTxns = transactions.filter(t => t.date === dateStr)
+      const intensity = Math.min(dayTxns.length, 4)
+      data.push({ date: dateStr, intensity })
+    }
+    return data
+  }, [transactions])
+  
   const weeks = []
   for (let w = 0; w < 12; w++) {
-    weeks.push(HEATMAP_DATA.slice(w * 7, (w + 1) * 7))
+    weeks.push(heatmapData.slice(w * 7, (w + 1) * 7))
   }
 
   return (
@@ -283,6 +286,10 @@ function WeeklyCashFlowChart() {
 
 // ── MAIN COMPONENT ──
 export default function ActivityPage() {
+    const [timeFilter, setTimeFilter] = useState('3 Months')
+  
+    const filteredTxns = useMemo(() => filterByPeriod(TRANSACTIONS, timeFilter), [timeFilter])
+  
   return (
     <div className="h-[calc(100vh-2.5rem)] flex flex-col gap-5">
       <main className="flex-1 overflow-y-auto flex flex-col gap-5">
@@ -295,18 +302,19 @@ export default function ActivityPage() {
           </div>
           <div className="flex items-center gap-2 rounded-2xl bg-slate-50 p-1 border border-slate-100">
             {['Week', 'Month', '3 Months'].map((opt) => (
-              <button
-                key={opt}
-                className={`rounded-xl px-4 py-1.5 text-xs font-semibold transition-all duration-200 ${
-                  opt === '3 Months'
-                    ? 'bg-white text-slate-800 shadow-sm border border-slate-100'
-                    : 'text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                {opt}
-              </button>
+                <button
+                    key={opt}
+                    onClick={() => setTimeFilter(opt)}
+                    className={`rounded-xl px-4 py-1.5 text-xs font-semibold transition-all duration-200 ${
+                        timeFilter === opt
+                            ? 'bg-white text-slate-800 shadow-sm border border-slate-100'
+                            : 'text-slate-400 hover:text-slate-600'
+                    }`}
+                >
+                    {opt}
+                </button>
             ))}
-          </div>
+            </div>
         </header>
 
         {/* Activity Heatmap */}
@@ -320,7 +328,7 @@ export default function ActivityPage() {
               <p className="text-xs text-slate-400">Transaction intensity over time</p>
             </div>
           </div>
-          <ActivityHeatmap />
+          <ActivityHeatmap transactions={filteredTxns} />
         </section>
 
         {/* Peak Hours + Weekly Cash Flow */}
