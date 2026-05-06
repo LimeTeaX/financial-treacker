@@ -19,7 +19,7 @@ const NAV_ITEMS = [
 ]
 
 const ACCOUNT_ITEMS = [
-  { id: 'activity', icon: TrendingUp, label: 'Activity', page: null },
+  { id: 'activity', icon: TrendingUp, label: 'Activity', page: 'Activity' },
   { id: 'support', icon: Headphones, label: 'Support', page: null },
 ]
 
@@ -52,9 +52,15 @@ function NavItem({ icon: Icon, label, active, badge, onClick }) {
 
 export default function Sidebar({ currentPage, setCurrentPage }) {
   const getActiveTab = () => {
-    const item = NAV_ITEMS.find(item => item.page === currentPage)
-    return item ? item.id : 'home'
-  }
+
+  const navItem = NAV_ITEMS.find(item => item.page === currentPage)
+  if (navItem) return navItem.id
+  
+  const accountItem = ACCOUNT_ITEMS.find(item => item.page === currentPage)
+  if (accountItem) return accountItem.id
+  
+  return 'home'
+    }
 
   const activeTab = getActiveTab()
 
@@ -92,14 +98,18 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
           </p>
           <nav className="space-y-1">
             {ACCOUNT_ITEMS.map((item) => (
-              <NavItem
-                key={item.id}
-                icon={item.icon}
-                label={item.label}
-                badge={null}
-                active={activeTab === item.id}
-                onClick={() => {}}
-              />
+                <NavItem
+                    key={item.id}
+                    icon={item.icon}
+                    label={item.label}
+                    badge={null}
+                    active={item.id === activeTab}
+                        onClick={() => {
+                            if (item.page) setCurrentPage(item.page)
+                            if (item.id === 'activity') setCurrentPage('Activity')
+                            if (item.id === 'support') setCurrentPage('Support')
+                        }}
+                />
             ))}
           </nav>
         </div>
