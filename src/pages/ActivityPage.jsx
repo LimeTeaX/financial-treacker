@@ -17,6 +17,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { TRANSACTIONS, filterByPeriod } from "../data/transactions";
+import { useAppContext } from '../context/AppContext'
 
 // ── STATIC DATA ──
 const RECENT_LOGS = [
@@ -401,11 +402,9 @@ function WeeklyCashFlowChart() {
 
 // ── MAIN ──
 export default function ActivityPage() {
+    const { transactions } = useAppContext()
   const [timeFilter, setTimeFilter] = useState("3 Months");
-  const filteredTxns = useMemo(
-    () => filterByPeriod(TRANSACTIONS, timeFilter),
-    [timeFilter],
-  );
+  const filteredTxns = useMemo(() => filterByPeriod(transactions, timeFilter), [transactions, timeFilter])
 
   return (
     <div className="h-[calc(100vh-2.5rem)] flex flex-col gap-5">

@@ -1,5 +1,6 @@
 // src/pages/TransactionPage.jsx
 import { useState, useMemo } from "react";
+import { useAppContext } from '../context/AppContext'
 import { TRANSACTIONS } from "../data/transactions";
 import {
   Search,
@@ -110,6 +111,7 @@ function TransactionCard({ tx }) {
 
 // ── MAIN COMPONENT ──
 export default function TransactionPage() {
+  const { transactions } = useAppContext()
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [sortBy, setSortBy] = useState("Newest");
@@ -118,7 +120,7 @@ export default function TransactionPage() {
 
   // Filter & Sort Logic
   const filteredTransactions = useMemo(() => {
-    let result = [...TRANSACTIONS];
+    let result = [...transactions];
 
     // Search
     if (search.trim()) {
@@ -143,7 +145,7 @@ export default function TransactionPage() {
     }
 
     return result;
-  }, [search, filterStatus, sortBy]);
+  }, [search, filterStatus, sortBy, transactions]);
 
   // Pagination
   const totalPages = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);

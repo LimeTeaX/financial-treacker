@@ -7,6 +7,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { TRANSACTIONS, filterByPeriod } from "../data/transactions";
+import { useAppContext } from '../context/AppContext'
 
 // ── HELPER FUNCTIONS ──
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
@@ -178,11 +179,9 @@ function MonthlyBarChart({ data }) {
 
 // ── MAIN COMPONENT ──
 export default function Analytics() {
+    const { transactions } = useAppContext()
   const [filter, setFilter] = useState("6 Months");
-  const filteredTxns = useMemo(
-    () => filterByPeriod(TRANSACTIONS, filter),
-    [filter],
-  );
+  const filteredTxns = useMemo(() => filterByPeriod(transactions, filter), [transactions, filter])
 
   const monthlyData = useMemo(
     () => getMonthlyData(filteredTxns),

@@ -149,40 +149,13 @@ const BAR_DATA = [
   { month: "Oct", income: 75, scheduled: 62, expenses: 52 },
 ];
 
-const TRANSACTIONS = [
-  {
-    name: "Iva Ryan",
-    status: "In progress",
-    date: "22 Jan, 2024",
-    amount: "$12,334",
-    avatar: "IR",
-    avatarBg: "bg-rose-200 text-rose-700",
-  },
-  {
-    name: "Kurt Bates",
-    status: "Completed",
-    date: "02 Feb, 2024",
-    amount: "$20,652",
-    avatar: "KB",
-    avatarBg: "bg-blue-200 text-blue-700",
-  },
-  {
-    name: "James Hall",
-    status: "In progress",
-    date: "18 May, 2024",
-    amount: "$16,328",
-    avatar: "JH",
-    avatarBg: "bg-amber-200 text-amber-700",
-  },
-  {
-    name: "Kenneth Allen",
-    status: "Completed",
-    date: "19 Jan, 2024",
-    amount: "$17,652",
-    avatar: "KA",
-    avatarBg: "bg-emerald-200 text-emerald-700",
-  },
-];
+const RECENT_TXNS = [
+  { id: 1, name: 'Iva Ryan', status: 'Completed', date: '2026-05-06', amount: 12334, avatar: 'IR', avatarBg: 'bg-rose-200 text-rose-700' },
+  { id: 2, name: 'Kurt Bates', status: 'Completed', date: '2026-05-05', amount: 20652, avatar: 'KB', avatarBg: 'bg-blue-200 text-blue-700' },
+  { id: 3, name: 'James Hall', status: 'Pending', date: '2026-05-04', amount: 16328, avatar: 'JH', avatarBg: 'bg-amber-200 text-amber-700' },
+  { id: 4, name: 'Kenneth Allen', status: 'Completed', date: '2026-05-03', amount: 17652, avatar: 'KA', avatarBg: 'bg-emerald-200 text-emerald-700' },
+  { id: 5, name: 'Leslie Alexander', status: 'Pending', date: '2026-05-02', amount: 9450, avatar: 'LA', avatarBg: 'bg-blue-200 text-blue-700' },
+]
 
 function NavItem({ icon: Icon, label, active, badge, onClick }) {
   return (
@@ -386,9 +359,10 @@ function SpendingGauge() {
 }
 
 export default function Dashboard() {
+  const { transactions } = useAppContext()
+  const { addTransaction } = useAppContext()
   const [activeGoal, setActiveGoal] = useState("First home");
   const [txSort, setTxSort] = useState("Newest");
-  const { transactions } = useAppContext();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState({
@@ -404,6 +378,14 @@ export default function Dashboard() {
     setIsModalOpen(false);
     setForm({ merchant: "", category: "Food", amount: "", type: "expense" });
   };
+
+  const sortedTxns = [...RECENT_TXNS].sort((a, b) => {
+  if (txSort === 'Newest') return new Date(b.date) - new Date(a.date)
+  if (txSort === 'Oldest') return new Date(a.date) - new Date(b.date)
+  if (txSort === 'Highest') return b.amount - a.amount
+  if (txSort === 'Lowest') return a.amount - b.amount
+  return 0
+})
 
   return (
     <div className="mx-auto max-w-[1600px] gap-5">
@@ -468,15 +450,15 @@ export default function Dashboard() {
             </h2>
             <div className="flex items-center gap-2">
               <select
-                value={txSort}
-                onChange={(e) => setTxSort(e.target.value)}
-                className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
-              >
-                <option>Newest</option>
-                <option>Oldest</option>
-                <option>Highest</option>
-                <option>Lowest</option>
-              </select>
+  value={txSort}
+  onChange={(e) => setTxSort(e.target.value)}
+  className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
+>
+  <option>Newest</option>
+  <option>Oldest</option>
+  <option>Highest</option>
+  <option>Lowest</option>
+</select>
               <button className="text-slate-300 hover:text-slate-500 transition-colors">
                 <MoreHorizontal size={18} />
               </button>
@@ -484,36 +466,31 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-3">
-            {TRANSACTIONS.map((tx, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0"
-              >
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold ${tx.avatarBg}`}
-                  >
-                    {tx.avatar}
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-800">
-                      {tx.name}
-                    </p>
-                    <p className="text-xs text-slate-400">{tx.date}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p
-                    className={`text-sm font-semibold ${tx.status === "Completed" ? "text-emerald-500" : "text-amber-500"}`}
-                  >
-                    {tx.status}
-                  </p>
-                  <p className="text-sm font-bold text-slate-900">
-                    {tx.amount}
-                  </p>
-                </div>
-              </div>
-            ))}
+            {sortedTxns.map((tx) => (
+  <tr key={tx.id} className="hover:bg-slate-50/60 transition-colors">
+    <td className="py-3.5 pr-4">
+      <div className="flex items-center gap-3">
+        <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${tx.avatarBg}`}>
+          {tx.avatar}
+        </span>
+        <span className="font-medium text-slate-800 text-sm">{tx.name}</span>
+      </div>
+    </td>
+    <td className="py-3.5 pr-4">
+      <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+        tx.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-500'
+      }`}>
+        {tx.status}
+      </span>
+    </td>
+    <td className="py-3.5 pr-4 text-slate-400 text-xs">
+      {new Date(tx.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+    </td>
+    <td className="py-3.5 text-right font-bold text-slate-800">
+      ${tx.amount.toLocaleString('en-US')}
+    </td>
+  </tr>
+))}
           </div>
         </div>
       </div>
