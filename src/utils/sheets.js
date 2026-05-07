@@ -1,4 +1,4 @@
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzFDdGaaCUqcKn6Q6nCuYvIRkM9zRdcX5C8rYlWjCC9RGeq-RjixcgpbaUi-DLwSROrSw/exec'
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyEAns5Ld-KlqqmeCv5vrzY0elgcdd0Y8cke_B93RRuBi6zOY4JlvDVvba6kp0HHd3fbg/exec'
 
 const postToSheets = async (payload) => {
   const res = await fetch(SHEETS_URL, {

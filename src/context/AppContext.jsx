@@ -1,11 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import {
-  deleteFromSheets,
-  loadFromSheets,
-  saveToSheets,
-  syncToSheets,
-} from '../utils/sheets'
-import { TRANSACTIONS } from '../data/transactions'
+import { supabase } from '../lib/supabase'
 
 const AppContext = createContext()
 
@@ -14,51 +8,68 @@ export function AppProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadFromSheets().then(data => {
-      if (data.length > 0) {
-        setTransactions(data)
-      } else {
-        setTransactions(TRANSACTIONS)
-      }
-      setLoading(false)
-    })
+    loadTransactions()
   }, [])
+
+  const loadTransactions = async () => {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .order('date', { ascending: false })
+
+    if (!error && data) {
+      setTransactions(data)
+    }
+    setLoading(false)
+  }
 
   const addTransaction = async (newTx) => {
     const tx = {
       id: Date.now(),
       date: new Date().toISOString().split('T')[0],
-      ...newTx,
+      merchant: newTx.merchant,
+      category: newTx.category,
+      amount: newTx.amount,
+      type: newTx.type || 'expense',
       status: 'Completed',
     }
 
-    const saved = await saveToSheets(tx)
-    if (!saved) return false
+    console.log('Sending to Supabase:', tx)
 
-    setTransactions(prev => [tx, ...prev])
-    return true
+    const { error } = await supabase.from('transactions').insert([tx])
+    
+    if (!error) {
+      setTransactions(prev => [tx, ...prev])
+      return true
+    }
+    console.error('Supabase error:', error)
+    return false
   }
 
   const updateTransaction = async (id, updatedData) => {
-    const updated = transactions.map(tx =>
-      String(tx.id) === String(id) ? { ...tx, ...updatedData } : tx
-    )
+    const { error } = await supabase
+      .from('transactions')
+      .update(updatedData)
+      .eq('id', id)
 
-    const synced = await syncToSheets(updated)
-    if (!synced) return false
-
-    setTransactions(updated)
-    return true
+    if (!error) {
+      await loadTransactions()
+      return true
+    }
+    return false
   }
 
   const deleteTransaction = async (id) => {
-    const filtered = transactions.filter(tx => String(tx.id) !== String(id))
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', id)
 
-    const deleted = await deleteFromSheets(id)
-    if (!deleted) return false
-
-    setTransactions(filtered)
-    return true
+    if (!error) {
+      setTransactions(prev => prev.filter(tx => String(tx.id) !== String(id)))
+      return true
+    }
+    return false
   }
 
   if (loading) {
