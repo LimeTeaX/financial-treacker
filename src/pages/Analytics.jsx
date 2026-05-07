@@ -179,7 +179,7 @@ function MonthlyBarChart({ data }) {
 
 // ── MAIN COMPONENT ──
 export default function Analytics() {
-    const { transactions } = useAppContext()
+  const { transactions, addTransaction } = useAppContext()
   const [filter, setFilter] = useState("6 Months");
   const filteredTxns = useMemo(() => filterByPeriod(transactions, filter), [transactions, filter])
 

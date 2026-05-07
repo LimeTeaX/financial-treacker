@@ -111,7 +111,7 @@ function TransactionCard({ tx }) {
 
 // ── MAIN COMPONENT ──
 export default function TransactionPage() {
-  const { transactions } = useAppContext()
+  const { transactions, addTransaction } = useAppContext()
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [sortBy, setSortBy] = useState("Newest");

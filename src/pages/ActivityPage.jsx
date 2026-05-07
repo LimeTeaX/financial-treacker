@@ -402,7 +402,7 @@ function WeeklyCashFlowChart() {
 
 // ── MAIN ──
 export default function ActivityPage() {
-    const { transactions } = useAppContext()
+  const { transactions, addTransaction } = useAppContext()
   const [timeFilter, setTimeFilter] = useState("3 Months");
   const filteredTxns = useMemo(() => filterByPeriod(transactions, timeFilter), [transactions, timeFilter])
 
