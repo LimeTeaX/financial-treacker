@@ -6,8 +6,8 @@ import {
   PiggyBank,
   AlertTriangle,
 } from "lucide-react";
-import { TRANSACTIONS, filterByPeriod } from "../data/transactions";
 import { useAppContext } from '../context/AppContext'
+import { filterByPeriod } from '../data/transactions'
 
 // ── HELPER FUNCTIONS ──
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
@@ -179,9 +179,13 @@ function MonthlyBarChart({ data }) {
 
 // ── MAIN COMPONENT ──
 export default function Analytics() {
-  const { transactions, addTransaction } = useAppContext()
+  const { transactions } = useAppContext()
   const [filter, setFilter] = useState("6 Months");
-  const filteredTxns = useMemo(() => filterByPeriod(transactions, filter), [transactions, filter])
+
+const filteredTxns = useMemo(() => {
+  if (!transactions || transactions.length === 0) return []
+  return filterByPeriod(transactions, filter)
+}, [transactions, filter])
 
   const monthlyData = useMemo(
     () => getMonthlyData(filteredTxns),
