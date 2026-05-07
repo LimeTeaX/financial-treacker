@@ -26,26 +26,53 @@ function StatCard({ label, value, change, positive, sub, color, iconColor, icon 
   );
 }
 
-function BarChart() {
-  const maxVal = 100;
+function BarChart({ transactions }) {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  
+  const barData = months.map((month, index) => {
+    const monthNum = String(index + 1).padStart(2, '0')
+    const monthTxns = transactions.filter(t => {
+      if (!t.date) return false
+      return t.date.startsWith(`${currentYear}-${monthNum}`)
+    })
+    
+    const income = monthTxns
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + (t.amount || 0), 0)
+    
+    const expenses = monthTxns
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + Math.abs(t.amount || 0), 0)
+    
+    return {
+      month,
+      income: income / 100000,  // Skala ke 100k
+      scheduled: 0,
+      expenses: expenses / 100000
+    }
+  })
+
+  const maxVal = Math.max(...barData.map(d => Math.max(d.income, d.expenses)), 1)
+
   return (
     <div className="mt-6">
       <div className="flex items-center gap-5 text-xs text-slate-400 mb-4">
         <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#8B5CF6]" />Income</span>
-        <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-violet-200" />Scheduled</span>
         <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-300" />Expenses</span>
       </div>
       <div className="relative h-52">
         <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[10px] text-slate-300 pointer-events-none pr-2 w-8">
-          {["10k", "10k", "10k", "10k", "0k"].map((l, i) => <span key={i}>{l}</span>)}
+          {[4, 3, 2, 1, 0].map(n => (
+            <span key={n}>{n > 0 ? `${(maxVal * n / 4).toFixed(0)}k` : '0'}</span>
+          ))}
         </div>
         <div className="ml-8 h-full flex items-end gap-1.5 pb-6">
-          {BAR_DATA.map((d, i) => (
+          {barData.map((d, i) => (
             <div key={d.month} className="flex-1 flex flex-col items-center gap-0.5 h-full justify-end relative group">
-              {i === 3 && <div className="absolute inset-x-0 bottom-5 top-1 rounded-xl border-2 border-violet-200 bg-violet-50/40 pointer-events-none" />}
               <div className="flex items-end gap-0.5 w-full justify-center">
                 <div className="w-2 rounded-t-full bg-[#8B5CF6] transition-all" style={{ height: `${(d.income / maxVal) * 140}px` }} />
-                <div className="w-2 rounded-t-full bg-violet-200 transition-all" style={{ height: `${(d.scheduled / maxVal) * 140}px` }} />
                 <div className="w-2 rounded-t-full bg-orange-300 transition-all" style={{ height: `${(d.expenses / maxVal) * 140}px` }} />
               </div>
               <span className="text-[9px] text-slate-300 mt-1.5">{d.month}</span>
@@ -57,46 +84,53 @@ function BarChart() {
   );
 }
 
-function SpendingGauge() {
-  const r = 90, strokeWidth = 22, circumference = Math.PI * r;
+function SpendingGauge({ transactions }) {
+  const now = new Date()
+  const currentMonth = String(now.getMonth() + 1).padStart(2, '0')
+  const currentYear = now.getFullYear()
+  
+  const thisMonthTxns = transactions.filter(t => {
+    if (!t.date) return false
+    return t.date.startsWith(`${currentYear}-${currentMonth}`)
+  })
+  
+  const monthlyIncome = thisMonthTxns
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + (t.amount || 0), 0)
+    
+  const monthlyExpenses = thisMonthTxns
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + Math.abs(t.amount || 0), 0)
+  
+  const total = monthlyIncome + monthlyExpenses
+  const incomePct = total > 0 ? monthlyIncome / total : 0
+  const expensePct = total > 0 ? monthlyExpenses / total : 0
+
+  const r = 90, strokeWidth = 22, circumference = Math.PI * r
+
   return (
     <div className="flex flex-col items-center mt-4">
       <div className="flex items-center gap-4 text-xs text-slate-400 mb-3">
         <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#8B5CF6]" />Income</span>
-        <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-violet-200" />Scheduled</span>
         <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-200" />Spend</span>
       </div>
       <div className="relative w-[220px] h-[120px] overflow-hidden">
         <svg width="220" height="220" viewBox="0 0 220 120" className="absolute top-0 left-0">
           <path d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} strokeLinecap="round" />
           <path d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke="#8B5CF6" strokeWidth={strokeWidth} strokeLinecap="round"
-            strokeDasharray={`${0.45 * circumference} ${circumference}`} strokeDashoffset="0" />
-          <path d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke="#ddd6fe" strokeWidth={strokeWidth} strokeLinecap="butt"
-            strokeDasharray={`${0.3 * circumference} ${circumference}`} strokeDashoffset={`${-0.45 * circumference}`} />
+            strokeDasharray={`${incomePct * circumference} ${circumference}`} strokeDashoffset="0" />
           <path d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke="#fed7aa" strokeWidth={strokeWidth} strokeLinecap="round"
-            strokeDasharray={`${0.25 * circumference} ${circumference}`} strokeDashoffset={`${-0.75 * circumference}`} />
+            strokeDasharray={`${expensePct * circumference} ${circumference}`} strokeDashoffset={`${-incomePct * circumference}`} />
         </svg>
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center">
           <span className="text-[10px] uppercase tracking-widest text-slate-400 font-medium">Spend</span>
-          <span className="text-xl font-bold text-slate-800">$6,058.94</span>
+          <span className="text-xl font-bold text-slate-800">Rp {(monthlyExpenses / 1000).toFixed(0)}k</span>
         </div>
       </div>
     </div>
   );
 }
 
-const BAR_DATA = [
-  { month: "Jan", income: 62, scheduled: 48, expenses: 38 },
-  { month: "Feb", income: 55, scheduled: 60, expenses: 42 },
-  { month: "Mar", income: 70, scheduled: 52, expenses: 55 },
-  { month: "Apr", income: 85, scheduled: 78, expenses: 60 },
-  { month: "May", income: 58, scheduled: 45, expenses: 35 },
-  { month: "Jun", income: 72, scheduled: 65, expenses: 50 },
-  { month: "Jul", income: 68, scheduled: 55, expenses: 45 },
-  { month: "Aug", income: 60, scheduled: 50, expenses: 40 },
-  { month: "Sep", income: 65, scheduled: 58, expenses: 48 },
-  { month: "Oct", income: 75, scheduled: 62, expenses: 52 },
-];
 
 export default function Dashboard() {
   const { showToast } = useToast();
@@ -228,11 +262,11 @@ const handleSubmit = async (e) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <div className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Income vs Expenses</h2>
-            <BarChart />
+            <BarChart transactions={transactions} />
           </div>
           <div className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Spending Breakdown</h2>
-            <SpendingGauge />
+            <SpendingGauge transactions={transactions} />
           </div>
         </div>
 
