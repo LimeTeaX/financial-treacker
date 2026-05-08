@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase'
 
 const NAV_ITEMS = [
   { id: "home", icon: Home, label: "Home", page: "Dashboard" },
-  { id: "messages", icon: MessageSquare, label: "Message", page: "Message" },
+  { id: "messages", icon: MessageSquare, label: "Recurring", page: "Message" },
   { id: "analytics", icon: BarChart2, label: "Analytics", page: "Analytics" },
   { id: "transactions", icon: ArrowLeftRight, label: "Transaction", page: "Transaction" },
   { id: "payment", icon: CreditCard, label: "Payment", page: "Payment" },
@@ -34,7 +34,7 @@ function NavItem({ icon: Icon, label, active, badge, onClick }) {
       </span>
       <span className="flex-1 text-sm">{label}</span>
       {badge && (
-        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-200 px-1.5 text-[10px] font-semibold text-slate-600">
+        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#8B5CF6] px-1.5 text-[10px] font-semibold text-white">
           {badge}
         </span>
       )}
@@ -44,6 +44,14 @@ function NavItem({ icon: Icon, label, active, badge, onClick }) {
 
 export default function Sidebar({ currentPage, setCurrentPage }) {
   const [billsCount, setBillsCount] = useState(0)
+  const [profile, setProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem('majumoney_profile')
+      return saved ? JSON.parse(saved) : { name: 'Jackson Maju Tambunan', title: 'Digital Office Administration @ USU' }
+    } catch {
+      return { name: 'Jackson Maju Tambunan', title: 'Digital Office Administration @ USU' }
+    }
+  })
 
   const getActiveTab = () => {
     const navItem = NAV_ITEMS.find((item) => item.page === currentPage);
@@ -70,9 +78,15 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
 
   return (
     <aside className="fixed h-screen top-0 left-0 w-[260px] shrink-0 flex flex-col gap-6 rounded-3xl bg-white p-5 border border-slate-100 shadow-sm z-20 overflow-y-auto">
-      <div className="flex items-center gap-2.5 px-2 pt-1 pb-2">
-        <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#8B5CF6] text-white text-xs font-bold">T</span>
-        <span className="font-bold text-slate-800 text-lg tracking-tight">Thrive</span>
+      {/* Profile Header */}
+      <div className="flex items-center gap-3 px-2 pt-1 pb-3 border-b border-slate-100 mb-2">
+        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#8B5CF6] to-violet-300 flex items-center justify-center text-white text-sm font-bold">
+          {profile.name?.split(' ').map(n => n[0]).join('') || 'JM'}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-slate-800 truncate">{profile.name}</p>
+          <p className="text-[10px] text-slate-400 truncate">{profile.title}</p>
+        </div>
       </div>
 
       <div className="flex-1 flex flex-col gap-6">
@@ -104,7 +118,6 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
                 active={item.id === activeTab}
                 onClick={() => {
                   if (item.page) setCurrentPage(item.page);
-                  if (item.id === "activity") setCurrentPage("Activity");
                 }}
               />
             ))}

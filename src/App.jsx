@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import Sidebar from './components/Sidebar'
 import Dashboard from './Dashboard'
-import MessagePage from './pages/MessagePage'
+import RecurringPage from './pages/RecurringPage'
 import Analytics from './pages/Analytics'
 import TransactionPage from './pages/TransactionPage'
 import PaymentPage from './pages/PaymentPage'
@@ -56,7 +56,7 @@ function App() {
       <main className="ml-[260px] p-5 min-h-screen">
         <div key={currentPage} className="animate-fadeIn">
           {currentPage === 'Dashboard' && <Dashboard />}
-          {currentPage === 'Message' && <MessagePage />}
+          {currentPage === 'Message' && <RecurringPage />}
           {currentPage === 'Analytics' && <Analytics />}
           {currentPage === 'Transaction' && <TransactionPage />}
           {currentPage === 'Payment' && <PaymentPage />}
