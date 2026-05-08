@@ -33,7 +33,7 @@ function getMonthlyData(transactions) {
 function getCategoryBreakdown(transactions) {
   const expenses = transactions.filter((t) => t.type === "expense");
   const totalExpenses = expenses.reduce((sum, t) => sum + t.amount, 0);
-  const categories = ["Food", "Internet", "Subscription", "Gaming/Top-up"];
+  const categories = [...new Set(expenses.map(t => t.category))]
 
   return categories.map((cat) => {
     const amount = expenses

@@ -19,3 +19,14 @@ export const deleteBill = async (id) => {
   const { error } = await supabase.from('bills').delete().eq('id', id)
   return !error
 }
+
+export const loadPaymentHistory = async () => {
+  const { data, error } = await supabase
+    .from('bills')
+    .select('*')
+    .eq('status', 'paid')
+    .order('date', { ascending: false })
+  
+  if (error) return []
+  return data
+}

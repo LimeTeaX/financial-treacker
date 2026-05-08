@@ -6,7 +6,7 @@ import {
   CreditCard, Wallet, QrCode, Building2,
   Receipt, Download, X, ChevronRight, Plus, ShieldCheck,
 } from "lucide-react";
-import { loadBills, addBill } from '../lib/bills'
+import { loadBills, addBill, loadPaymentHistory } from '../lib/bills'
 
 // ── CATEGORIES ──
 const BILL_CATEGORIES = [
@@ -15,15 +15,7 @@ const BILL_CATEGORIES = [
   { id: "tuition", icon: GraduationCap, label: "College Tuition", color: "bg-emerald-100 text-emerald-600" },
   { id: "mobile", icon: Smartphone, label: "Mobile Data", color: "bg-violet-100 text-violet-600" },
   { id: "game", icon: Gamepad2, label: "Game Top-up", color: "bg-rose-100 text-rose-600" },
-];
-
-// ── PAYMENT HISTORY (Dummy) ──
-const PAYMENT_HISTORY = [
-  { id: 1, merchant: "PLN Electricity", date: "2026-04-25", amount: 245000, method: "BSI Transfer", status: "success" },
-  { id: 2, merchant: "IndiHome WiFi", date: "2026-04-10", amount: 350000, method: "QRIS", status: "success" },
-  { id: 3, merchant: "Google Play Top-up", date: "2026-04-05", amount: 150000, method: "DANA", status: "success" },
-  { id: 4, merchant: "Telkomsel Data", date: "2026-03-28", amount: 100000, method: "ShopeePay", status: "success" },
-  { id: 5, merchant: "UKT Semester 3", date: "2026-03-15", amount: 4500000, method: "Mandiri Transfer", status: "success" },
+  { id: "debt", icon: CreditCard, label: "Debt/Hutang", color: "bg-rose-100 text-rose-600" },
 ];
 
 
@@ -39,6 +31,7 @@ function PaymentModal({ isOpen, onClose, bill, selectedMethod, setSelectedMethod
       setSelectedMethod(null);
     }, 2000);
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -175,6 +168,12 @@ export default function PaymentPage() {
   }
 }
 
+    const [paymentHistory, setPaymentHistory] = useState([])
+
+    useEffect(() => {
+    loadPaymentHistory().then(data => setPaymentHistory(data))
+    }, [bills])
+
   return (
     <div className="h-[calc(100vh-2.5rem)] flex flex-col gap-5">
       <main className="flex-1 overflow-y-auto flex flex-col gap-5">
@@ -253,12 +252,16 @@ export default function PaymentPage() {
                           bill.category === "electricity" ? "bg-amber-100 text-amber-600" :
                           bill.category === "internet" ? "bg-blue-100 text-blue-600" :
                           bill.category === "tuition" ? "bg-emerald-100 text-emerald-600" :
-                          bill.category === "mobile" ? "bg-violet-100 text-violet-600" : "bg-rose-100 text-rose-600"
+                          bill.category === "mobile" ? "bg-violet-100 text-violet-600" :
+                          bill.category === "debt" ? "bg-rose-100 text-rose-600" : "bg-rose-100 text-rose-600"
+                          
                         }`}>
                           {bill.category === "electricity" ? <Zap size={16} /> :
                            bill.category === "internet" ? <Wifi size={16} /> :
                            bill.category === "tuition" ? <GraduationCap size={16} /> :
-                           bill.category === "mobile" ? <Smartphone size={16} /> : <Gamepad2 size={16} />}
+                           bill.category === "mobile" ? <Smartphone size={16} /> : 
+                           bill.category === "debt" ? <CreditCard size={16} /> :
+                           <Gamepad2 size={16} />}
                         </span>
                         <div>
                           <p className="text-sm font-semibold text-slate-800">{bill.merchant}</p>
@@ -284,7 +287,7 @@ export default function PaymentPage() {
           <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
             <p className="text-sm font-medium text-slate-400 mb-4">Recent Payments</p>
             <div className="space-y-3">
-              {PAYMENT_HISTORY.map((payment) => (
+              {paymentHistory.map((payment) => (
                 <div key={payment.id} className="flex items-center justify-between py-3 px-4 rounded-2xl hover:bg-slate-50 transition-colors border border-slate-50">
                   <div className="flex items-center gap-3">
                     <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-500"><Receipt size={16} /></span>
@@ -325,6 +328,7 @@ export default function PaymentPage() {
             <option value="tuition">College Tuition</option>
             <option value="mobile">Mobile Data</option>
             <option value="game">Game Top-up</option>
+            <option value="debt">Debt</option>
           </select>
         </div>
         

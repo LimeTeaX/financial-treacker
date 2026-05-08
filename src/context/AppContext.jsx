@@ -23,28 +23,30 @@ export function AppProvider({ children }) {
     setLoading(false)
   }
 
-  const addTransaction = async (newTx) => {
-    const tx = {
-      id: Date.now(),
-      date: new Date().toISOString().split('T')[0],
-      merchant: newTx.merchant,
-      category: newTx.category,
-      amount: newTx.amount,
-      type: newTx.type || 'expense',
-      status: 'Completed',
-    }
-
-    console.log('Sending to Supabase:', tx)
-
-    const { error } = await supabase.from('transactions').insert([tx])
-    
-    if (!error) {
-      setTransactions(prev => [tx, ...prev])
-      return true
-    }
-    console.error('Supabase error:', error)
-    return false
+const addTransaction = async (newTx) => {
+  const now = new Date()
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+  
+  const tx = {
+    id: Date.now(),
+    date: `${dateStr} ${timeStr}`,
+    merchant: newTx.merchant,
+    category: newTx.category,
+    amount: newTx.amount,
+    type: newTx.type || 'expense',
+    status: 'Completed',
   }
+
+  const { error } = await supabase.from('transactions').insert([tx])
+
+  if (!error) {
+    setTransactions(prev => [tx, ...prev])
+    return true
+  }
+  console.error('Supabase error:', error)
+  return false
+}
 
   const updateTransaction = async (id, updatedData) => {
     const { error } = await supabase
