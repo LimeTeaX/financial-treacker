@@ -9,8 +9,11 @@ import PaymentPage from './pages/PaymentPage'
 import ActivityPage from './pages/ActivityPage'
 import ProfilePage from './pages/ProfilePage'
 import SettingPage from './pages/SettingPage'
+import { useAuth } from './context/AuthContext'
+import AuthPage from './pages/AuthPage'
 
 function App() {
+  const { user } = useAuth()
   const [currentPage, setCurrentPage] = useState('Dashboard')
 
   const getDeviceInfo = () => {
@@ -49,6 +52,9 @@ function App() {
     
     insertLogin()
   }, [])
+
+  // 🔥 Auth check
+  if (!user) return <AuthPage />
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900" style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}>
