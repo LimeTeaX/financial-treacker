@@ -149,6 +149,23 @@ useEffect(() => {
   fetchLoginHistory()
 }, [])
 
+const [avatarUrl, setAvatarUrl] = useState(() => {
+  return localStorage.getItem('majumoney_avatar') || null
+})
+
+const handleAvatarChange = (e) => {
+  const file = e.target.files[0]
+  if (file) {
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const base64 = event.target.result
+      setAvatarUrl(base64)
+      localStorage.setItem('majumoney_avatar', base64)
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
   // Realtime stats
   const stats = useMemo(() => {
     const totalTxns = transactions.length
@@ -173,15 +190,24 @@ useEffect(() => {
           <div className="flex items-start justify-between flex-wrap gap-4">
             <div className="flex items-center gap-5">
               <div className="relative">
-                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-[#8B5CF6] to-violet-300 flex items-center justify-center text-white text-2xl font-bold ring-4 ring-violet-50">
-                  {profile.name.split(' ').map(n => n[0]).join('')}
-                </div>
-                {isEditing && (
-                  <button className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-[#8B5CF6] flex items-center justify-center text-white shadow-sm">
-                    <Edit3 size={12} />
-                  </button>
-                )}
-              </div>
+  <label className="cursor-pointer">
+    {avatarUrl ? (
+      <img src={avatarUrl} className="h-20 w-20 rounded-full object-cover ring-4 ring-violet-50" alt="Avatar" />
+    ) : (
+      <div className="h-20 w-20 rounded-full bg-gradient-to-br from-[#8B5CF6] to-violet-300 flex items-center justify-center text-white text-2xl font-bold ring-4 ring-violet-50">
+        {profile.name.split(' ').map(n => n[0]).join('')}
+      </div>
+    )}
+    {isEditing && (
+      <>
+        <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+        <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-[#8B5CF6] flex items-center justify-center text-white shadow-sm">
+          <Edit3 size={12} />
+        </div>
+      </>
+    )}
+  </label>
+</div>
 
               {isEditing ? (
                 <div className="space-y-2 flex-1">
