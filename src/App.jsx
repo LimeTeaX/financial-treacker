@@ -11,6 +11,8 @@ import ProfilePage from './pages/ProfilePage'
 import SettingPage from './pages/SettingPage'
 import { useAuth } from './context/AuthContext'
 import AuthPage from './pages/AuthPage'
+import AdminPage from './pages/AdminPage'
+
 
 function App() {
   const { user } = useAuth()
@@ -69,6 +71,8 @@ function App() {
           {currentPage === 'Activity' && <ActivityPage />}
           {currentPage === 'Profile' && <ProfilePage />}
           {currentPage === 'Setting' && <SettingPage />}
+          {currentPage === 'Admin' && <AdminPage />}
+          
         </div>
       </main>
     </div>

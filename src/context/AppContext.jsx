@@ -1,9 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from './AuthContext'
 
 const AppContext = createContext()
 
 export function AppProvider({ children }) {
+  const { user } = useAuth()
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -79,6 +81,7 @@ export function AppProvider({ children }) {
       amount: newTx.amount,
       type: newTx.type || 'expense',
       status: 'Completed',
+      user_id: user?.id,
     }
 
     const { error } = await supabase.from('transactions').insert([tx])
@@ -87,8 +90,6 @@ export function AppProvider({ children }) {
       setTransactions(prev => [tx, ...prev])
       return true
     }
-    console.error('Supabase error:', error)
-    return false
   }
 
   const updateTransaction = async (id, updatedData) => {

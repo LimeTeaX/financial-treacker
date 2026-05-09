@@ -19,12 +19,12 @@ import App from './App'
 })()
 
 createRoot(document.getElementById('root')).render(
-<AppProvider>
-  <AuthProvider>
+<AuthProvider>
+  <AppProvider>
     <ToastProvider>
       <App />
     </ToastProvider>
-  </AuthProvider>
-</AppProvider>
+  </AppProvider>
+</AuthProvider>
 
 )

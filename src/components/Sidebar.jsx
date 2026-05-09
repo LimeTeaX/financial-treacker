@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import {
   Home, MessageSquare, BarChart2, ArrowLeftRight, CreditCard,
-  TrendingUp, Headphones, Settings, LogOut,
+  TrendingUp, Headphones, Settings, LogOut, Shield,
 } from "lucide-react";
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 
 const NAV_ITEMS = [
   { id: "home", icon: Home, label: "Home", page: "Dashboard" },
@@ -44,14 +45,28 @@ function NavItem({ icon: Icon, label, active, badge, onClick }) {
 
 export default function Sidebar({ currentPage, setCurrentPage }) {
   const [billsCount, setBillsCount] = useState(0)
-  const [profile, setProfile] = useState(() => {
-    try {
-      const saved = localStorage.getItem('majumoney_profile')
-      return saved ? JSON.parse(saved) : { name: 'Jackson Maju Tambunan', title: 'Digital Office Administration @ USU' }
-    } catch {
-      return { name: 'Jackson Maju Tambunan', title: 'Digital Office Administration @ USU' }
-    }
+  const { user, role } = useAuth()
+  const [profile, setProfile] = useState({ name: 'Loading...', title: '' })
+  const [avatarUrl, setAvatarUrl] = useState(() => {
+    return localStorage.getItem('majumoney_avatar') || null
   })
+
+  // Load profile from Supabase
+  useEffect(() => {
+    if (user) {
+      supabase.from('user_profiles').select('*').eq('user_id', user.id).single()
+        .then(({ data }) => {
+          if (data) {
+            setProfile(data)
+            localStorage.setItem('majumoney_profile', JSON.stringify(data))
+            if (data.avatar_url) {
+              setAvatarUrl(data.avatar_url)
+              localStorage.setItem('majumoney_avatar', data.avatar_url)
+            }
+          }
+        })
+    }
+  }, [user])
 
   const getActiveTab = () => {
     const navItem = NAV_ITEMS.find((item) => item.page === currentPage);
@@ -60,6 +75,7 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
     if (accountItem) return accountItem.id;
     const bottomItem = BOTTOM_ITEMS.find((item) => item.page === currentPage);
     if (bottomItem) return bottomItem.id;
+    if (currentPage === 'Admin') return 'admin';
     return "home";
   };
 
@@ -76,12 +92,36 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
     fetchBillsCount()
   }, [])
 
+  // Listen for profile updates
+  useEffect(() => {
+    const handleProfileUpdate = async () => {
+      if (user) {
+        const { data } = await supabase.from('user_profiles').select('*').eq('user_id', user.id).single()
+        if (data) {
+          setProfile(data)
+          localStorage.setItem('majumoney_profile', JSON.stringify(data))
+          if (data.avatar_url) {
+            setAvatarUrl(data.avatar_url)
+            localStorage.setItem('majumoney_avatar', data.avatar_url)
+          }
+        }
+      }
+    }
+    
+    window.addEventListener('profileUpdated', handleProfileUpdate)
+    return () => window.removeEventListener('profileUpdated', handleProfileUpdate)
+  }, [user])
+
   return (
     <aside className="fixed h-screen top-0 left-0 w-[260px] shrink-0 flex flex-col gap-6 rounded-3xl bg-white p-5 border border-slate-100 shadow-sm z-20 overflow-y-auto">
       {/* Profile Header */}
       <div className="flex items-center gap-3 px-2 pt-1 pb-3 border-b border-slate-100 mb-2">
-        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#8B5CF6] to-violet-300 flex items-center justify-center text-white text-sm font-bold">
-          {profile.name?.split(' ').map(n => n[0]).join('') || 'JM'}
+        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#8B5CF6] to-violet-300 flex items-center justify-center text-white text-sm font-bold overflow-hidden">
+          {avatarUrl ? (
+            <img src={avatarUrl} className="h-full w-full object-cover" alt="" />
+          ) : (
+            profile.name?.split(' ').map(n => n[0]).join('') || 'JM'
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-slate-800 truncate">{profile.name}</p>
@@ -103,6 +143,11 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
                 onClick={() => setCurrentPage(item.page)}
               />
             ))}
+
+            {role === 'admin' && (
+              <NavItem icon={Shield} label="Admin" page="Admin" active={activeTab === 'admin'}
+                onClick={() => setCurrentPage('Admin')} />
+            )}
           </nav>
         </div>
 

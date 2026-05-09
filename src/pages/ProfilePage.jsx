@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useAppContext } from '../context/AppContext'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 
 // ── CONNECTED APPS ──
 const CONNECTED_APPS = [
@@ -33,7 +34,7 @@ function DownloadModal({ isOpen, onClose, transactions }) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `majumoney_export_${new Date().toISOString().split('T')[0]}.csv`
+    a.download = `moneypulse_export_${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     URL.revokeObjectURL(url)
     onClose()
@@ -45,7 +46,7 @@ function DownloadModal({ isOpen, onClose, transactions }) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `majumoney_export_${new Date().toISOString().split('T')[0]}.json`
+    a.download = `moneypulse_export_${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
     onClose()
@@ -80,91 +81,124 @@ function DownloadModal({ isOpen, onClose, transactions }) {
 // ── MAIN COMPONENT ──
 export default function ProfilePage() {
   const { transactions } = useAppContext()
-  const [toggles, setToggles] = useState({
-    "2fa": true,
-    biometric: false,
-    alerts: true,
-  })
+  const { user } = useAuth()
+  const [toggles, setToggles] = useState({ "2fa": true, biometric: false, alerts: true })
   const [isDownloadOpen, setIsDownloadOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const [profile, setProfile] = useState(() => {
-    const saved = localStorage.getItem('majumoney_profile')
-    return saved ? JSON.parse(saved) : {
-      name: 'Jackson Maju Tambunan',
-      title: 'Digital Office Administration @ USU',
-      memberSince: 'April 2026',
-      location: 'Medan, ID',
-      program: 'D3 Digital Office Admin',
-      semester: '4 (Genap 2026)',
-      nim: '2024****',
-      faculty: 'Vokasi',
-    }
-  })
+  const [profile, setProfile] = useState(null) // Start null, load from Supabase
+  const [avatarUrl, setAvatarUrl] = useState(null)
+  const [loginHistory, setLoginHistory] = useState([])
 
+  // 🔥 Load profile from Supabase FIRST
   useEffect(() => {
-    localStorage.setItem('majumoney_profile', JSON.stringify(profile))
-  }, [profile])
+    if (user) {
+      supabase.from('user_profiles').select('*').eq('user_id', user.id).single()
+        .then(({ data }) => {
+          if (data) {
+            setProfile(data)
+            localStorage.setItem('moneypulse_profile', JSON.stringify(data))
+            if (data.avatar_url) {
+              setAvatarUrl(data.avatar_url)
+              localStorage.setItem('moneypulse_avatar', data.avatar_url)
+            }
+          } else {
+            // Fallback default
+            const defaultProfile = {
+              name: 'User',
+              title: 'Dashboard user',
+              memberSince: 'May 2026',
+              location: 'Medan, ID',
+              program: '',
+              semester: '',
+              nim: '',
+              faculty: '',
+            }
+            setProfile(defaultProfile)
+            supabase.from('user_profiles').upsert({ id: Date.now(), user_id: user.id, ...defaultProfile }, { onConflict: 'user_id' })
+          }
+        })
+    }
+  }, [user])
 
-  const getDeviceInfo = () => {
-  const ua = navigator.userAgent
-  if (/iPhone/.test(ua)) return '📱 iPhone'
-  if (/iPad/.test(ua)) return '📱 iPad'
-  if (/Android/.test(ua)) return '📱 Android Phone'
-  if (/Macintosh/.test(ua)) return '💻 MacBook'
-  if (/Windows/.test(ua)) return '🖥️ Windows PC'
-  if (/Linux/.test(ua)) return '🐧 Linux PC'
-  return '🖥️ Desktop'
-}
+  // 🔥 Load avatar from localStorage or Supabase
+  useEffect(() => {
+    const savedAvatar = localStorage.getItem('moneypulse_avatar')
+    if (savedAvatar) setAvatarUrl(savedAvatar)
+    else if (user) {
+      supabase.from('user_profiles').select('avatar_url').eq('user_id', user.id).single()
+        .then(({ data }) => {
+          if (data?.avatar_url) {
+            setAvatarUrl(data.avatar_url)
+            localStorage.setItem('moneypulse_avatar', data.avatar_url)
+          }
+        })
+    }
+  }, [user])
 
-const getBrowserInfo = () => {
-  const ua = navigator.userAgent
-  if (/Chrome/.test(ua) && !/Edg/.test(ua)) return 'Chrome'
-  if (/Firefox/.test(ua)) return 'Firefox'
-  if (/Safari/.test(ua) && !/Chrome/.test(ua)) return 'Safari'
-  if (/Edg/.test(ua)) return 'Edge'
-  if (/Opera|OPR/.test(ua)) return 'Opera'
-  return 'Browser'
-}
+  // 🔥 Load login history
+  useEffect(() => {
+    const fetchLoginHistory = async () => {
+      const { data, error } = await supabase
+        .from('login_history')
+        .select('*')
+        .order('time', { ascending: false })
+        .limit(5)
+      
+      if (!error && data) {
+        const formatted = data.map((log, i) => ({
+          ...log,
+          status: i === 0 ? 'current' : 'success'
+        }))
+        setLoginHistory(formatted)
+      }
+    }
+    fetchLoginHistory()
+  }, [])
 
-  // Realtime login activity
-const [loginHistory, setLoginHistory] = useState([])
-
-useEffect(() => {
-  const fetchLoginHistory = async () => {
-    const { data, error } = await supabase
-      .from('login_history')
-      .select('*')
-      .order('time', { ascending: false })
-      .limit(5)
-    
-    if (!error && data) {
-      const formatted = data.map((log, i) => ({
-        ...log,
-        status: i === 0 ? 'current' : 'success'
-      }))
-      setLoginHistory(formatted)
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = async (event) => {
+        const base64 = event.target.result
+        setAvatarUrl(base64)
+        localStorage.setItem('moneypulse_avatar', base64)
+        if (user) {
+          await supabase.from('user_profiles').upsert({ user_id: user.id, avatar_url: base64 }, { onConflict: 'user_id' })
+        }
+      }
+      reader.readAsDataURL(file)
     }
   }
-  
-  fetchLoginHistory()
-}, [])
 
-const [avatarUrl, setAvatarUrl] = useState(() => {
-  return localStorage.getItem('majumoney_avatar') || null
-})
-
-const handleAvatarChange = (e) => {
-  const file = e.target.files[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const base64 = event.target.result
-      setAvatarUrl(base64)
-      localStorage.setItem('majumoney_avatar', base64)
+  const handleSaveProfile = async () => {
+    localStorage.setItem('moneypulse_profile', JSON.stringify(profile))
+    if (user) {
+      const { error } = await supabase.from('user_profiles').upsert({
+        user_id: user.id,
+        name: profile.name,
+        title: profile.title,
+        location: profile.location,
+        memberSince: profile.memberSince,
+        program: profile.program,
+        semester: profile.semester,
+        nim: profile.nim,
+        faculty: profile.faculty,
+      }, { onConflict: 'user_id' })
+      
+      if (!error) {
+        console.log('✅ Profile saved to Supabase')
+        window.dispatchEvent(new Event('profileUpdated'))
+      } else {
+        console.error('❌ Supabase error:', error)
+      }
     }
-    reader.readAsDataURL(file)
+    setIsEditing(false)
   }
-}
+
+  const handleToggle = (id) => {
+    setToggles(prev => ({ ...prev, [id]: !prev[id] }))
+  }
 
   // Realtime stats
   const stats = useMemo(() => {
@@ -174,12 +208,13 @@ const handleAvatarChange = (e) => {
     return { totalTxns, totalIncome, totalExpenses, balance: totalIncome - totalExpenses }
   }, [transactions])
 
-  const handleToggle = (id) => {
-    setToggles(prev => ({ ...prev, [id]: !prev[id] }))
-  }
-
-  const handleSaveProfile = () => {
-    setIsEditing(false)
+  // Loading
+  if (!profile) {
+    return (
+      <div className="h-[calc(100vh-2.5rem)] flex items-center justify-center">
+        <p className="text-slate-400 text-lg">Loading profile...</p>
+      </div>
+    )
   }
 
   return (
@@ -190,45 +225,45 @@ const handleAvatarChange = (e) => {
           <div className="flex items-start justify-between flex-wrap gap-4">
             <div className="flex items-center gap-5">
               <div className="relative">
-  <label className="cursor-pointer">
-    {avatarUrl ? (
-      <img src={avatarUrl} className="h-20 w-20 rounded-full object-cover ring-4 ring-violet-50" alt="Avatar" />
-    ) : (
-      <div className="h-20 w-20 rounded-full bg-gradient-to-br from-[#8B5CF6] to-violet-300 flex items-center justify-center text-white text-2xl font-bold ring-4 ring-violet-50">
-        {profile.name.split(' ').map(n => n[0]).join('')}
-      </div>
-    )}
-    {isEditing && (
-      <>
-        <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
-        <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-[#8B5CF6] flex items-center justify-center text-white shadow-sm">
-          <Edit3 size={12} />
-        </div>
-      </>
-    )}
-  </label>
-</div>
+                <label className="cursor-pointer">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} className="h-20 w-20 rounded-full object-cover ring-4 ring-violet-50" alt="Avatar" />
+                  ) : (
+                    <div className="h-20 w-20 rounded-full bg-gradient-to-br from-[#8B5CF6] to-violet-300 flex items-center justify-center text-white text-2xl font-bold ring-4 ring-violet-50">
+                      {profile.name?.split(' ').map(n => n[0]).join('') || 'U'}
+                    </div>
+                  )}
+                  {isEditing && (
+                    <>
+                      <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                      <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-[#8B5CF6] flex items-center justify-center text-white shadow-sm">
+                        <Edit3 size={12} />
+                      </div>
+                    </>
+                  )}
+                </label>
+              </div>
 
               {isEditing ? (
                 <div className="space-y-2 flex-1">
-                  <input value={profile.name} onChange={(e) => setProfile({...profile, name: e.target.value})}
+                  <input value={profile.name || ''} onChange={(e) => setProfile({...profile, name: e.target.value})}
                     className="w-full text-2xl font-bold bg-slate-50 rounded-xl px-3 py-1 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20" />
-                  <input value={profile.title} onChange={(e) => setProfile({...profile, title: e.target.value})}
+                  <input value={profile.title || ''} onChange={(e) => setProfile({...profile, title: e.target.value})}
                     className="w-full text-slate-500 bg-slate-50 rounded-xl px-3 py-1 border border-slate-100 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20" />
                 </div>
               ) : (
                 <div>
-                  <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{profile.name}</h1>
+                  <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{profile.name || 'User'}</h1>
                   <p className="text-slate-500 flex items-center gap-1.5 mt-1">
                     <GraduationCap size={14} />
-                    {profile.title}
+                    {profile.title || 'Dashboard user'}
                   </p>
                   <div className="flex items-center gap-2 mt-3">
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-600">
-                      <Calendar size={11} /> Member since {profile.memberSince}
+                      <Calendar size={11} /> Member since {profile.memberSince || 'May 2026'}
                     </span>
                     <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-[#8B5CF6]">
-                      <MapPin size={11} /> {profile.location}
+                      <MapPin size={11} /> {profile.location || 'Medan, ID'}
                     </span>
                   </div>
                 </div>
@@ -284,10 +319,10 @@ const handleAvatarChange = (e) => {
                   <div key={item.key} className="rounded-2xl bg-slate-50 p-4">
                     <p className="text-xs text-slate-400">{item.label}</p>
                     {isEditing ? (
-                      <input value={profile[item.key]} onChange={(e) => setProfile({...profile, [item.key]: e.target.value})}
+                      <input value={profile[item.key] || ''} onChange={(e) => setProfile({...profile, [item.key]: e.target.value})}
                         className="text-sm font-semibold text-slate-800 mt-1 bg-transparent border-b border-slate-200 focus:outline-none focus:border-[#8B5CF6] w-full" />
                     ) : (
-                      <p className="text-sm font-semibold text-slate-800 mt-1">{item.value}</p>
+                      <p className="text-sm font-semibold text-slate-800 mt-1">{profile[item.key] || '—'}</p>
                     )}
                   </div>
                 ))}
@@ -359,7 +394,7 @@ const handleAvatarChange = (e) => {
                 {loginHistory.map((login) => (
                   <div key={login.id} className="flex items-center gap-3 py-2.5 px-3 rounded-2xl hover:bg-slate-50 transition-colors">
                     <span className={`inline-flex h-2 w-2 rounded-full ${login.status === "current" ? "bg-emerald-400 animate-pulse" : "bg-slate-300"}`} />
-                    <div className="flex-1"><p className="text-sm font-medium text-slate-800">{login.device}</p><p className="text-[10px] text-slate-400">{login.location} • {login.time}</p></div>
+                    <div className="flex-1"><p className="text-sm font-medium text-slate-800">{login.device || 'Unknown'}</p><p className="text-[10px] text-slate-400">{login.location || 'Unknown'} • {login.time || 'Unknown'}</p></div>
                     {login.status === "current" && <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Current</span>}
                   </div>
                 ))}
