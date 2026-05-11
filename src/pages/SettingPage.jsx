@@ -25,7 +25,34 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
+import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
+
+const DEFAULT_SETTINGS = {
+  theme: "light",
+  currency: "IDR",
+  date_format: "DD/MM/YYYY",
+  language: "Indonesian",
+  email_alerts: true,
+  monthly_reports: false,
+  font_size: "normal",
+  biometric_login: false,
+  transaction_pin: "",
+};
+
+const buildSettingsPayload = (userId, settings = {}) => ({
+  user_id: userId,
+  theme: settings.theme ?? DEFAULT_SETTINGS.theme,
+  currency: settings.currency ?? DEFAULT_SETTINGS.currency,
+  date_format: settings.date_format ?? DEFAULT_SETTINGS.date_format,
+  language: settings.language ?? DEFAULT_SETTINGS.language,
+  email_alerts: settings.email_alerts ?? DEFAULT_SETTINGS.email_alerts,
+  monthly_reports: settings.monthly_reports ?? DEFAULT_SETTINGS.monthly_reports,
+  font_size: settings.font_size ?? DEFAULT_SETTINGS.font_size,
+  biometric_login:
+    settings.biometric_login ?? DEFAULT_SETTINGS.biometric_login,
+  transaction_pin: settings.transaction_pin ?? DEFAULT_SETTINGS.transaction_pin,
+});
 
 // ── TOGGLE SWITCH ──
 function ToggleSwitch({ enabled, onChange }) {
@@ -98,6 +125,7 @@ function ResetModal({ isOpen, onClose, onConfirm }) {
 // ── MAIN COMPONENT ──
 export default function SettingPage() {
   const { transactions } = useAppContext();
+  const { user } = useAuth();
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isResetOpen, setIsResetOpen] = useState(false);
@@ -106,70 +134,86 @@ export default function SettingPage() {
   // Load settings dari Supabase
   useEffect(() => {
     const loadSettings = async () => {
-      let { data, error } = await supabase
-        .from("user_settings")
-        .select("*")
-        .eq("id", 1)
-        .maybeSingle();
-
-      if (!data) {
-        // Insert default
-        await supabase.from("user_settings").upsert(
-          {
-            id: 1,
-            theme: "light",
-            currency: "IDR",
-            date_format: "DD/MM/YYYY",
-            language: "Indonesian",
-            email_alerts: true,
-            monthly_reports: false,
-            font_size: "normal",
-            biometric_login: false,
-            transaction_pin: "",
-          },
-          { onConflict: "id" },
-        );
-
-        // Fetch lagi
-        const res = await supabase
-          .from("user_settings")
-          .select("*")
-          .eq("id", 1)
-          .maybeSingle();
-        if (res.data) {
-          setSettings(res.data);
-        }
-      } else {
-        setSettings(data);
+      if (!user?.id) {
+        setSettings(null);
+        setLoading(false);
+        return;
       }
 
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from("user_settings")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Failed to load user settings:", error.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data) {
+        setSettings(data);
+        setLoading(false);
+        return;
+      }
+
+      const { data: createdSettings, error: createError } = await supabase
+        .from("user_settings")
+        .upsert(buildSettingsPayload(user.id), { onConflict: "user_id" })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error("Failed to create user settings:", createError.message);
+        setLoading(false);
+        return;
+      }
+
+      setSettings(createdSettings);
       setLoading(false);
     };
     loadSettings();
-  }, []);
+  }, [user?.id]);
 
   // SAVE SETTING
-const saveSetting = async (key, value) => {
-  setSettings((prev) => ({ ...prev, [key]: value }));
-  await supabase.from("user_settings").update({ [key]: value }).eq("id", 1);
+  const saveSetting = async (key, value) => {
+    if (!user?.id) return false;
 
-  if (key === "theme") {
-    // 🔥 Hapus localStorage.setItem
-    // Langsung apply ke DOM
-    if (value === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else if (value === 'light') {
-      document.documentElement.classList.remove('dark')
-    } else if (value === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      if (prefersDark) {
-        document.documentElement.classList.add('dark')
-      } else {
-        document.documentElement.classList.remove('dark')
+    const previousSettings = settings;
+    const nextSettings = { ...(settings ?? DEFAULT_SETTINGS), [key]: value };
+
+    setSettings(nextSettings);
+
+    const { error } = await supabase
+      .from("user_settings")
+      .upsert(buildSettingsPayload(user.id, nextSettings), {
+        onConflict: "user_id",
+      });
+
+    if (error) {
+      setSettings(previousSettings);
+      console.error("Failed to save user setting:", error.message);
+      return false;
+    }
+
+    if (key === "theme") {
+      if (value === "dark") {
+        document.documentElement.classList.add("dark");
+      } else if (value === "light") {
+        document.documentElement.classList.remove("dark");
+      } else if (value === "system") {
+        const prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)",
+        ).matches;
+        document.documentElement.classList.toggle("dark", prefersDark);
       }
     }
-  }
-};
+
+    return true;
+  };
 
   // Apply theme
   useEffect(() => {
@@ -291,14 +335,9 @@ const saveSetting = async (key, value) => {
     }
 
     // 🔥 Panggil saveSetting
-    setSettings((prev) => ({ ...prev, transaction_pin: newPin }));
+    const saved = await saveSetting("transaction_pin", newPin);
 
-    const { error } = await supabase
-      .from("user_settings")
-      .update({ transaction_pin: newPin })
-      .eq("id", 1);
-
-    if (!error) {
+    if (saved) {
       setShowPinModal(false);
       setPinData({ currentPin: "", newPin: "", confirmPin: "" });
       setPinError("");

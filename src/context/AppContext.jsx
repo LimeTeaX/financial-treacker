@@ -21,6 +21,34 @@ export const formatDate = (dateStr, settings) => {
   }
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 }
+
+const DEFAULT_SETTINGS = {
+  theme: 'light',
+  currency: 'IDR',
+  date_format: 'DD/MM/YYYY',
+  language: 'Indonesian',
+  email_alerts: true,
+  monthly_reports: false,
+  font_size: 'normal',
+  biometric_login: false,
+  transaction_pin: '',
+}
+
+const applyTheme = (theme) => {
+  if (theme === 'dark') {
+    document.documentElement.classList.add('dark')
+    return
+  }
+
+  if (theme === 'system') {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    document.documentElement.classList.toggle('dark', prefersDark)
+    return
+  }
+
+  document.documentElement.classList.remove('dark')
+}
+
 export function AppProvider({ children }) {
   const { user } = useAuth()
   const [transactions, setTransactions] = useState([])
@@ -87,20 +115,49 @@ export function AppProvider({ children }) {
 
   const [settings, setSettings] = useState(null)
 
-useEffect(() => {
-  supabase.from('user_settings').select('*').eq('id', 1).single()
-    .then(({ data }) => {
+  useEffect(() => {
+    if (!user?.id) {
+      setSettings(null)
+      return
+    }
+
+    supabase.from('user_settings').select('*').eq('user_id', user.id).maybeSingle()
+    .then(async ({ data, error }) => {
+      if (error) {
+        console.error('Failed to load user settings:', error.message)
+        return
+      }
+
+      if (!data) {
+        const { data: createdSettings, error: createError } = await supabase
+          .from('user_settings')
+          .upsert(
+            {
+              user_id: user.id,
+              ...DEFAULT_SETTINGS,
+            },
+            { onConflict: 'user_id' },
+          )
+          .select()
+          .single()
+
+        if (createError) {
+          console.error('Failed to create user settings:', createError.message)
+          return
+        }
+
+        setSettings(createdSettings)
+        applyTheme(createdSettings.theme)
+        return
+      }
+
       if (data) {
         setSettings(data)
         // 🔥 Apply theme langsung
-        if (data.theme === 'dark') {
-          document.documentElement.classList.add('dark')
-        } else {
-          document.documentElement.classList.remove('dark')
-        }
+        applyTheme(data.theme)
       }
     })
-}, [])
+  }, [user?.id])
 
   const addTransaction = async (newTx) => {
     const now = new Date()
