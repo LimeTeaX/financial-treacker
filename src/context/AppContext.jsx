@@ -90,7 +90,15 @@ export function AppProvider({ children }) {
 useEffect(() => {
   supabase.from('user_settings').select('*').eq('id', 1).single()
     .then(({ data }) => {
-      if (data) setSettings(data)
+      if (data) {
+        setSettings(data)
+        // 🔥 Apply theme langsung
+        if (data.theme === 'dark') {
+          document.documentElement.classList.add('dark')
+        } else {
+          document.documentElement.classList.remove('dark')
+        }
+      }
     })
 }, [])
 

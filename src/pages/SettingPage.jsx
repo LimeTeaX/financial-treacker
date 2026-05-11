@@ -149,17 +149,27 @@ export default function SettingPage() {
   }, []);
 
   // SAVE SETTING
-  const saveSetting = async (key, value) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-    await supabase
-      .from("user_settings")
-      .update({ [key]: value })
-      .eq("id", 1);
+const saveSetting = async (key, value) => {
+  setSettings((prev) => ({ ...prev, [key]: value }));
+  await supabase.from("user_settings").update({ [key]: value }).eq("id", 1);
 
-    if (key === "theme") {
-      localStorage.setItem("majumoney_theme", value);
+  if (key === "theme") {
+    // 🔥 Hapus localStorage.setItem
+    // Langsung apply ke DOM
+    if (value === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else if (value === 'light') {
+      document.documentElement.classList.remove('dark')
+    } else if (value === 'system') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      if (prefersDark) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
     }
-  };
+  }
+};
 
   // Apply theme
   useEffect(() => {
