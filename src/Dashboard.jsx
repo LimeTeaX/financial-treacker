@@ -115,7 +115,7 @@ function BarChart({ transactions }) {
           ))}
         </div>
         <div className="ml-8 h-full flex items-end gap-1.5 pb-6">
-          {barData.map((d, i) => (
+          {barData.map((d) => (
             <div
               key={d.month}
               className="flex-1 flex flex-col items-center gap-0.5 h-full justify-end relative group"

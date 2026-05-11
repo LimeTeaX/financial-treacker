@@ -3,10 +3,9 @@ import { useEffect, useState } from 'react'
 import { CheckCircle2, XCircle, X } from 'lucide-react'
 
 export default function Toast({ message, type = 'success', onClose }) {
-  const [visible, setVisible] = useState(false)
+  const [visible, setVisible] = useState(true)
 
   useEffect(() => {
-    setVisible(true)
     const timer = setTimeout(() => {
       setVisible(false)
       setTimeout(onClose, 300)

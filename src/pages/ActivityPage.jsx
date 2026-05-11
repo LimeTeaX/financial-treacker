@@ -2,7 +2,6 @@
 import { useState, useMemo } from "react";
 import {
   TrendingUp,
-  TrendingDown,
   Clock,
   Calendar,
   Activity,
@@ -18,7 +17,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
-import { filterByPeriod } from "../data/transactions";
+import { filterByPeriod } from "../utils/helpers";
 
 function getHeatmapColor(intensity) {
   switch (intensity) {
@@ -47,7 +46,7 @@ function ActivityHeatmap({ transactions }) {
       const d = new Date(startDate);
       d.setDate(d.getDate() + i);
       const dateStr = d.toISOString().split("T")[0];
-      const dayTxns = transactions.filter((t) => t.date === dateStr);
+      const dayTxns = transactions.filter((t) => t.date?.startsWith(dateStr));
       data.push({ date: dateStr, intensity: Math.min(dayTxns.length, 4) });
     }
     return data;

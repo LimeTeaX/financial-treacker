@@ -1,18 +1,14 @@
 // src/pages/Analytics.jsx
 import { useState, useMemo } from "react";
-import { TrendingUp, TrendingDown, PiggyBank, AlertTriangle } from "lucide-react";
 import { useAppContext } from '../context/AppContext'
 
 // ── HELPER FUNCTIONS ──
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
 // Hitung data per bulan (income vs expenses)
 function getChartData(transactions, filter) {
   const now = new Date();
   
   if (filter === 'Week') {
     // 7 hari terakhir
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const data = {};
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
@@ -29,8 +25,6 @@ function getChartData(transactions, filter) {
   
 if (filter === 'Month') {
   // Tampilin per minggu (M1, M2, M3, M4, M5)
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
   const data = { 'Week 1': {income:0,expenses:0}, 'Week 2': {income:0,expenses:0}, 'Week 3': {income:0,expenses:0}, 'Week 4': {income:0,expenses:0}, 'Week 5': {income:0,expenses:0} };
   
   transactions.filter(t => t.date).forEach(t => {
@@ -92,10 +86,10 @@ if (filter === 'Month') {
 // Hitung breakdown per kategori (expense doang)
 function getCategoryBreakdown(transactions) {
   const expenses = transactions.filter(t => t.type === "expense");
-  const totalExpenses = expenses.reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = expenses.reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
   const categories = [...new Set(expenses.map(t => t.category))];
   return categories.map(cat => {
-    const amount = expenses.filter(t => t.category === cat).reduce((sum, t) => sum + t.amount, 0);
+    const amount = expenses.filter(t => t.category === cat).reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
     return {
       category: cat,
       amount,
@@ -108,16 +102,16 @@ function getCategoryBreakdown(transactions) {
 function DonutChart({ data, settings }) {
   const total = data.reduce((sum, d) => sum + d.amount, 0);
   const colors = ["#8B5CF6", "#F59E0B", "#EF4444", "#3B82F6", "#10B981", "#F97316", "#6366F1", "#EC4899"];
-  let cumulativePercent = 0;
   const symbol = settings?.currency === 'USD' ? '$' : 'Rp';  // 🔥 Currency
-  const locale = settings?.currency === 'USD' ? 'en-US' : 'id-ID';
 
   const slices = data.map((item, index) => {
     const percent = total > 0 ? item.amount / total : 0;
-    const startPercent = cumulativePercent;
-    cumulativePercent += percent;
+    const startPercent = data
+      .slice(0, index)
+      .reduce((sum, previous) => sum + (total > 0 ? previous.amount / total : 0), 0);
+    const endPercent = startPercent + percent;
     const startAngle = startPercent * 360;
-    const endAngle = cumulativePercent * 360;
+    const endAngle = endPercent * 360;
     const startRad = ((startAngle - 90) * Math.PI) / 180;
     const endRad = ((endAngle - 90) * Math.PI) / 180;
     const r = 70, cx = 100, cy = 100;
@@ -151,7 +145,7 @@ function DonutChart({ data, settings }) {
 }
 
 // ── BAR CHART ──
-function MonthlyBarChart({ data, settings }) {
+function MonthlyBarChart({ data }) {
   const maxVal = Math.max(...Object.values(data).map(d => Math.max(d.income, d.expenses)), 1);
   return (
     <div className="relative h-56">
@@ -207,7 +201,7 @@ export default function Analytics() {
   const categoryData = useMemo(() => getCategoryBreakdown(filteredTxns), [filteredTxns]);
 
   const totalIncome = filteredTxns.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
-  const totalExpenses = filteredTxns.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  const totalExpenses = filteredTxns.filter(t => t.type === "expense").reduce((s, t) => s + Math.abs(t.amount || 0), 0);
 
   return (
     <div className="h-[calc(100vh-2.5rem)] flex flex-col gap-5">

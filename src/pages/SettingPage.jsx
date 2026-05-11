@@ -1,93 +1,64 @@
-// src/pages/SettingPage.jsx
-import { useState, useEffect } from "react";
+import { useState } from 'react'
 import {
-  Settings,
-  Bell,
-  Palette,
-  Database,
-  Shield,
-  Info,
-  ChevronDown,
-  ToggleLeft,
-  ToggleRight,
-  Download,
-  Upload,
-  RotateCcw,
   AlertTriangle,
-  Globe,
+  Bell,
   Calendar,
-  Type,
-  Moon,
-  Sun,
-  Monitor,
-  Smartphone,
+  Database,
+  Download,
+  Globe,
+  Info,
   Lock,
-  ExternalLink,
-} from "lucide-react";
-import { useAppContext } from "../context/AppContext";
-import { useAuth } from "../context/AuthContext";
-import { supabase } from "../lib/supabase";
+  Monitor,
+  Moon,
+  Palette,
+  RotateCcw,
+  Settings,
+  Shield,
+  Sun,
+  Type,
+} from 'lucide-react'
+import { useAppContext } from '../context/AppContext'
 
-const DEFAULT_SETTINGS = {
-  theme: "light",
-  currency: "IDR",
-  date_format: "DD/MM/YYYY",
-  language: "Indonesian",
-  email_alerts: true,
-  monthly_reports: false,
-  font_size: "normal",
-  biometric_login: false,
-  transaction_pin: "",
-};
-
-const buildSettingsPayload = (userId, settings = {}) => ({
-  user_id: userId,
-  theme: settings.theme ?? DEFAULT_SETTINGS.theme,
-  currency: settings.currency ?? DEFAULT_SETTINGS.currency,
-  date_format: settings.date_format ?? DEFAULT_SETTINGS.date_format,
-  language: settings.language ?? DEFAULT_SETTINGS.language,
-  email_alerts: settings.email_alerts ?? DEFAULT_SETTINGS.email_alerts,
-  monthly_reports: settings.monthly_reports ?? DEFAULT_SETTINGS.monthly_reports,
-  font_size: settings.font_size ?? DEFAULT_SETTINGS.font_size,
-  biometric_login:
-    settings.biometric_login ?? DEFAULT_SETTINGS.biometric_login,
-  transaction_pin: settings.transaction_pin ?? DEFAULT_SETTINGS.transaction_pin,
-});
-
-// ── TOGGLE SWITCH ──
 function ToggleSwitch({ enabled, onChange }) {
   return (
     <button
       onClick={onChange}
-      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none ${enabled ? "bg-[#8B5CF6]" : "bg-slate-200"}`}
+      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none ${
+        enabled ? 'bg-[#8B5CF6]' : 'bg-slate-200'
+      }`}
     >
       <span
-        className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${enabled ? "translate-x-6" : "translate-x-1"}`}
+        className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${
+          enabled ? 'translate-x-6' : 'translate-x-1'
+        }`}
       />
     </button>
-  );
+  )
 }
 
-// ── RADIO GROUP ──
 function RadioGroup({ options, selected, onChange }) {
   return (
     <div className="flex gap-2">
-      {options.map((opt) => (
+      {options.map((option) => (
         <button
-          key={opt.value}
-          onClick={() => onChange(opt.value)}
-          className={`rounded-xl px-4 py-2 text-xs font-medium transition-all duration-200 ${selected === opt.value ? "bg-[#8B5CF6] text-white shadow-sm" : "bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-100"}`}
+          key={option.value}
+          onClick={() => onChange(option.value)}
+          className={`rounded-xl px-4 py-2 text-xs font-medium transition-all duration-200 ${
+            selected === option.value
+              ? 'bg-[#8B5CF6] text-white shadow-sm'
+              : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-100'
+          }`}
         >
-          {opt.label}
+          {option.label}
         </button>
       ))}
     </div>
-  );
+  )
 }
 
-// ── RESET MODAL ──
 function ResetModal({ isOpen, onClose, onConfirm }) {
-  if (!isOpen) return null;
+  if (!isOpen) return null
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-3xl p-6 w-full max-w-sm border border-slate-100 shadow-xl">
@@ -95,12 +66,9 @@ function ResetModal({ isOpen, onClose, onConfirm }) {
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-500 mb-3">
             <AlertTriangle size={28} />
           </div>
-          <h2 className="text-lg font-bold text-slate-900">
-            Reset All Transactions?
-          </h2>
+          <h2 className="text-lg font-bold text-slate-900">Reset All Transactions?</h2>
           <p className="text-sm text-slate-500 mt-1">
-            This will permanently delete all your financial data. This action
-            cannot be undone.
+            This will permanently delete all your transaction records.
           </p>
         </div>
         <div className="flex gap-3">
@@ -114,265 +82,91 @@ function ResetModal({ isOpen, onClose, onConfirm }) {
             onClick={onConfirm}
             className="flex-1 rounded-xl bg-rose-500 py-2.5 text-sm font-medium text-white hover:bg-rose-600 transition-colors"
           >
-            Yes, Reset All
+            Reset
           </button>
         </div>
       </div>
     </div>
-  );
+  )
 }
 
-// ── MAIN COMPONENT ──
 export default function SettingPage() {
-  const { transactions } = useAppContext();
-  const { user } = useAuth();
-  const [settings, setSettings] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isResetOpen, setIsResetOpen] = useState(false);
-  const [resetMessage, setResetMessage] = useState("");
+  const { transactions, settings, updateSettings, resetTransactions, loading } = useAppContext()
+  const [isResetOpen, setIsResetOpen] = useState(false)
+  const [resetMessage, setResetMessage] = useState('')
+  const [showPinModal, setShowPinModal] = useState(false)
+  const [pinData, setPinData] = useState({
+    currentPin: '',
+    newPin: '',
+    confirmPin: '',
+  })
+  const [pinError, setPinError] = useState('')
 
-  // Load settings dari Supabase
-  useEffect(() => {
-    const loadSettings = async () => {
-      if (!user?.id) {
-        setSettings(null);
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-
-      const { data, error } = await supabase
-        .from("user_settings")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error("Failed to load user settings:", error.message);
-        setLoading(false);
-        return;
-      }
-
-      if (data) {
-        setSettings(data);
-        setLoading(false);
-        return;
-      }
-
-      const { data: createdSettings, error: createError } = await supabase
-        .from("user_settings")
-        .upsert(buildSettingsPayload(user.id), { onConflict: "user_id" })
-        .select()
-        .single();
-
-      if (createError) {
-        console.error("Failed to create user settings:", createError.message);
-        setLoading(false);
-        return;
-      }
-
-      setSettings(createdSettings);
-      setLoading(false);
-    };
-    loadSettings();
-  }, [user?.id]);
-
-  // SAVE SETTING
   const saveSetting = async (key, value) => {
-    if (!user?.id) return false;
+    await updateSettings({ [key]: value })
+  }
 
-    const previousSettings = settings;
-    const nextSettings = { ...(settings ?? DEFAULT_SETTINGS), [key]: value };
-
-    setSettings(nextSettings);
-
-    const { error } = await supabase
-      .from("user_settings")
-      .upsert(buildSettingsPayload(user.id, nextSettings), {
-        onConflict: "user_id",
-      });
-
-    if (error) {
-      setSettings(previousSettings);
-      console.error("Failed to save user setting:", error.message);
-      return false;
-    }
-
-    if (key === "theme") {
-      if (value === "dark") {
-        document.documentElement.classList.add("dark");
-      } else if (value === "light") {
-        document.documentElement.classList.remove("dark");
-      } else if (value === "system") {
-        const prefersDark = window.matchMedia(
-          "(prefers-color-scheme: dark)",
-        ).matches;
-        document.documentElement.classList.toggle("dark", prefersDark);
-      }
-    }
-
-    return true;
-  };
-
-  // Apply theme
-  useEffect(() => {
-    if (!settings) return;
-
-    if (settings.theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else if (settings.theme === "light") {
-      document.documentElement.classList.remove("dark");
-    } else if (settings.theme === "system") {
-      // Detect Windows/macOS/Android dark mode
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)",
-      ).matches;
-      if (prefersDark) {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-    }
-  }, [settings?.theme]);
-
-  // Perubahan Sistem Theme
-  useEffect(() => {
-    if (!settings || settings.theme !== "system") return;
-
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-    const handleChange = (e) => {
-      if (e.matches) {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-    };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, [settings?.theme]);
-
-  // Apply font size
-  useEffect(() => {
-    if (!settings) return;
-    const html = document.documentElement;
-    html.style.fontSize =
-      settings.font_size === "small"
-        ? "14px"
-        : settings.font_size === "large"
-          ? "18px"
-          : "16px";
-  }, [settings?.font_size]);
-
-  // Export CSV
   const handleExportCSV = () => {
-    const headers = "ID,Date,Merchant,Category,Amount,Type,Status\n";
+    const headers = 'ID,Date,Merchant,Category,Amount,Type,Status\n'
     const rows = transactions
       .map(
-        (tx) =>
-          `${tx.id},${tx.date},${tx.merchant},${tx.category},${tx.amount},${tx.type},${tx.status}`,
+        (transaction) =>
+          `${transaction.id},${transaction.date},${transaction.merchant},${transaction.category},${transaction.amount},${transaction.type},${transaction.status}`,
       )
-      .join("\n");
-    const csv = headers + rows;
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `majumoney_export_${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+      .join('\n')
+    const csv = headers + rows
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `moneypulse_export_${new Date().toISOString().split('T')[0]}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
 
-  // Reset all transactions
   const handleReset = async () => {
-    const { error } = await supabase.from("transactions").delete().neq("id", 0);
-    if (!error) {
-      setResetMessage("All transactions have been reset.");
-      setIsResetOpen(false);
-      setTimeout(() => setResetMessage(""), 3000);
-      window.location.reload();
+    const reset = await resetTransactions()
+    if (reset) {
+      setResetMessage('All transactions have been reset.')
+      setIsResetOpen(false)
+      setTimeout(() => setResetMessage(''), 3000)
     }
-  };
-
-  // Change PIN
-  const [showPinModal, setShowPinModal] = useState(false);
-  const [isSettingNewPin, setIsSettingNewPin] = useState(false);
-  const [pinData, setPinData] = useState({
-    currentPin: "",
-    newPin: "",
-    confirmPin: "",
-  });
-  const [pinError, setPinError] = useState("");
-
-  const handleChangePin = () => {
-    setIsSettingNewPin(!settings?.transaction_pin); // true kalau belum ada PIN
-    setShowPinModal(true);
-  };
+  }
 
   const handleSavePin = async () => {
-    const { currentPin, newPin, confirmPin } = pinData;
+    const { currentPin, newPin, confirmPin } = pinData
 
     if (newPin.length < 4) {
-      setPinError("PIN minimal 4 digit");
-      return;
+      setPinError('PIN minimal 4 digit')
+      return
     }
 
     if (newPin !== confirmPin) {
-      setPinError("PIN tidak cocok");
-      return;
+      setPinError('PIN tidak cocok')
+      return
     }
 
-    // Cek PIN lama hanya kalau mode GANTI PIN (bukan set baru)
-    if (
-      !isSettingNewPin &&
-      settings?.transaction_pin &&
-      currentPin !== settings.transaction_pin
-    ) {
-      setPinError("PIN lama salah");
-      return;
+    if (settings.transaction_pin && currentPin !== settings.transaction_pin) {
+      setPinError('PIN lama salah')
+      return
     }
 
-    // 🔥 Panggil saveSetting
-    const saved = await saveSetting("transaction_pin", newPin);
-
+    const saved = await updateSettings({ transaction_pin: newPin })
     if (saved) {
-      setShowPinModal(false);
-      setPinData({ currentPin: "", newPin: "", confirmPin: "" });
-      setPinError("");
-      alert(
-        isSettingNewPin
-          ? "PIN berhasil dibuat! ✅"
-          : "PIN berhasil diupdate! ✅",
-      );
+      setShowPinModal(false)
+      setPinData({ currentPin: '', newPin: '', confirmPin: '' })
+      setPinError('')
     } else {
-      setPinError("Gagal menyimpan PIN. Coba lagi.");
+      setPinError('Gagal menyimpan PIN. Coba lagi.')
     }
-  };
+  }
 
-  // Apply theme from localStorage BEFORE Supabase loads
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("majumoney_theme");
-    if (savedTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else if (savedTheme === "system") {
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)",
-      ).matches;
-      if (prefersDark) document.documentElement.classList.add("dark");
-      else document.documentElement.classList.remove("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, []);
-
-  if (loading || !settings) {
+  if (loading.settings) {
     return (
       <div className="h-[calc(100vh-2.5rem)] flex items-center justify-center">
         <p className="text-slate-400 text-lg">Loading settings...</p>
       </div>
-    );
+    )
   }
 
   return (
@@ -394,32 +188,25 @@ export default function SettingPage() {
 
         <div className="grid gap-5 xl:grid-cols-2">
           <div className="flex flex-col gap-5">
-            {/* Preferences */}
             <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-[#8B5CF6]">
                   <Settings size={18} />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">
-                    Preferences
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    Customize your experience
-                  </p>
+                  <p className="text-sm font-semibold text-slate-800">Preferences</p>
+                  <p className="text-xs text-slate-400">Synced from Supabase</p>
                 </div>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Globe size={14} className="text-slate-400" />
-                    <span className="text-sm text-slate-700">
-                      Default Currency
-                    </span>
+                    <span className="text-sm text-slate-700">Default Currency</span>
                   </div>
                   <select
                     value={settings.currency}
-                    onChange={(e) => saveSetting("currency", e.target.value)}
+                    onChange={(event) => saveSetting('currency', event.target.value)}
                     className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
                   >
                     <option value="IDR">IDR (Rp)</option>
@@ -433,7 +220,7 @@ export default function SettingPage() {
                   </div>
                   <select
                     value={settings.date_format}
-                    onChange={(e) => saveSetting("date_format", e.target.value)}
+                    onChange={(event) => saveSetting('date_format', event.target.value)}
                     className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
                   >
                     <option value="DD/MM/YYYY">DD/MM/YYYY</option>
@@ -448,7 +235,7 @@ export default function SettingPage() {
                   </div>
                   <select
                     value={settings.language}
-                    onChange={(e) => saveSetting("language", e.target.value)}
+                    onChange={(event) => saveSetting('language', event.target.value)}
                     className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
                   >
                     <option value="Indonesian">Bahasa Indonesia</option>
@@ -458,19 +245,14 @@ export default function SettingPage() {
               </div>
             </article>
 
-            {/* Appearance */}
             <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
                   <Palette size={18} />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">
-                    Appearance
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    Theme & display settings
-                  </p>
+                  <p className="text-sm font-semibold text-slate-800">Appearance</p>
+                  <p className="text-xs text-slate-400">Theme and display settings</p>
                 </div>
               </div>
               <div className="space-y-4">
@@ -478,27 +260,35 @@ export default function SettingPage() {
                   <p className="text-sm text-slate-700 mb-2">Theme</p>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { value: "light", icon: Sun, label: "Light" },
-                      { value: "dark", icon: Moon, label: "Dark" },
-                      { value: "system", icon: Monitor, label: "System" },
-                    ].map((opt) => (
+                      { value: 'light', icon: Sun, label: 'Light' },
+                      { value: 'dark', icon: Moon, label: 'Dark' },
+                      { value: 'system', icon: Monitor, label: 'System' },
+                    ].map((option) => (
                       <button
-                        key={opt.value}
-                        onClick={() => saveSetting("theme", opt.value)}
-                        className={`flex flex-col items-center gap-2 rounded-2xl p-4 border transition-all duration-200 ${settings.theme === opt.value ? "border-[#8B5CF6] bg-violet-50 ring-2 ring-[#8B5CF6]/20" : "border-slate-100 hover:bg-slate-50"}`}
+                        key={option.value}
+                        onClick={() => saveSetting('theme', option.value)}
+                        className={`flex flex-col items-center gap-2 rounded-2xl p-4 border transition-all duration-200 ${
+                          settings.theme === option.value
+                            ? 'border-[#8B5CF6] bg-violet-50 ring-2 ring-[#8B5CF6]/20'
+                            : 'border-slate-100 hover:bg-slate-50'
+                        }`}
                       >
-                        <opt.icon
+                        <option.icon
                           size={20}
                           className={
-                            settings.theme === opt.value
-                              ? "text-[#8B5CF6]"
-                              : "text-slate-400"
+                            settings.theme === option.value
+                              ? 'text-[#8B5CF6]'
+                              : 'text-slate-400'
                           }
                         />
                         <span
-                          className={`text-xs font-medium ${settings.theme === opt.value ? "text-[#8B5CF6]" : "text-slate-600"}`}
+                          className={`text-xs font-medium ${
+                            settings.theme === option.value
+                              ? 'text-[#8B5CF6]'
+                              : 'text-slate-600'
+                          }`}
                         >
-                          {opt.label}
+                          {option.label}
                         </span>
                       </button>
                     ))}
@@ -508,18 +298,17 @@ export default function SettingPage() {
                   <p className="text-sm text-slate-700 mb-2">Font Size</p>
                   <RadioGroup
                     selected={settings.font_size}
-                    onChange={(val) => saveSetting("font_size", val)}
+                    onChange={(value) => saveSetting('font_size', value)}
                     options={[
-                      { value: "small", label: "Small" },
-                      { value: "normal", label: "Normal" },
-                      { value: "large", label: "Large" },
+                      { value: 'small', label: 'Small' },
+                      { value: 'normal', label: 'Normal' },
+                      { value: 'large', label: 'Large' },
                     ]}
                   />
                 </div>
               </div>
             </article>
 
-            {/* About */}
             <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
@@ -531,62 +320,45 @@ export default function SettingPage() {
                 </div>
               </div>
               <div className="space-y-3">
-                <div className="flex justify-between items-center py-2 px-3 rounded-2xl bg-slate-50">
-                  <span className="text-sm text-slate-500">Version</span>
-                  <span className="text-sm font-semibold text-slate-800">
-                    1.2.0
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2 px-3 rounded-2xl bg-slate-50">
-                  <span className="text-sm text-slate-500">Developer</span>
-                  <span className="text-sm font-semibold text-slate-800">
-                    Jackson Maju Tambunan
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2 px-3 rounded-2xl bg-slate-50">
-                  <span className="text-sm text-slate-500">Database</span>
-                  <span className="text-sm font-semibold text-slate-800">
-                    Supabase PostgreSQL
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-2 px-3 rounded-2xl bg-slate-50">
-                  <span className="text-sm text-slate-500">Transactions</span>
-                  <span className="text-sm font-semibold text-slate-800">
-                    {transactions.length} records
-                  </span>
-                </div>
-                <button className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-700 transition-colors">
-                  Check for Updates <ExternalLink size={14} />
-                </button>
+                {[
+                  ['Version', '1.2.0'],
+                  ['Database', 'Supabase PostgreSQL'],
+                  ['Transactions', `${transactions.length} records`],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="flex justify-between items-center py-2 px-3 rounded-2xl bg-slate-50"
+                  >
+                    <span className="text-sm text-slate-500">{label}</span>
+                    <span className="text-sm font-semibold text-slate-800">{value}</span>
+                  </div>
+                ))}
               </div>
             </article>
           </div>
 
           <div className="flex flex-col gap-5">
-            {/* Notifications */}
             <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-rose-500">
                   <Bell size={18} />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">
-                    Notifications
-                  </p>
+                  <p className="text-sm font-semibold text-slate-800">Notifications</p>
                   <p className="text-xs text-slate-400">Manage your alerts</p>
                 </div>
               </div>
               <div className="space-y-3">
                 {[
                   {
-                    key: "email_alerts",
-                    label: "Email Alerts",
-                    desc: "Get notified on major transactions",
+                    key: 'email_alerts',
+                    label: 'Email Alerts',
+                    desc: 'Get notified on major transactions',
                   },
                   {
-                    key: "monthly_reports",
-                    label: "Monthly Reports",
-                    desc: "Receive financial summary via email",
+                    key: 'monthly_reports',
+                    label: 'Monthly Reports',
+                    desc: 'Receive monthly financial summary',
                   },
                 ].map((item) => (
                   <div
@@ -594,35 +366,26 @@ export default function SettingPage() {
                     className="flex items-center justify-between py-3 px-4 rounded-2xl hover:bg-slate-50 transition-colors"
                   >
                     <div>
-                      <p className="text-sm font-medium text-slate-800">
-                        {item.label}
-                      </p>
+                      <p className="text-sm font-medium text-slate-800">{item.label}</p>
                       <p className="text-[10px] text-slate-400">{item.desc}</p>
                     </div>
                     <ToggleSwitch
                       enabled={settings[item.key]}
-                      onChange={() =>
-                        saveSetting(item.key, !settings[item.key])
-                      }
+                      onChange={() => saveSetting(item.key, !settings[item.key])}
                     />
                   </div>
                 ))}
               </div>
             </article>
 
-            {/* Data Management */}
             <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
                   <Database size={18} />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">
-                    Data Management
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    Backup & restore data
-                  </p>
+                  <p className="text-sm font-semibold text-slate-800">Data Management</p>
+                  <p className="text-xs text-slate-400">Export or reset your data</p>
                 </div>
               </div>
               <div className="space-y-2">
@@ -634,37 +397,11 @@ export default function SettingPage() {
                     <Download size={18} />
                   </span>
                   <div className="text-left flex-1">
-                    <p className="text-sm font-semibold text-slate-800">
-                      Export to CSV
-                    </p>
+                    <p className="text-sm font-semibold text-slate-800">Export to CSV</p>
                     <p className="text-xs text-slate-400">
                       Download all {transactions.length} transactions
                     </p>
                   </div>
-                  <ChevronDown
-                    size={16}
-                    className="text-slate-300 -rotate-90"
-                  />
-                </button>
-                <button
-                  onClick={() => alert("Backup feature coming soon!")}
-                  className="w-full flex items-center gap-3 rounded-2xl p-4 border border-slate-100 hover:bg-slate-50 transition-colors"
-                >
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-[#8B5CF6]">
-                    <Upload size={18} />
-                  </span>
-                  <div className="text-left flex-1">
-                    <p className="text-sm font-semibold text-slate-800">
-                      Backup to Cloud
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      Save to Google Drive
-                    </p>
-                  </div>
-                  <ChevronDown
-                    size={16}
-                    className="text-slate-300 -rotate-90"
-                  />
                 </button>
                 <button
                   onClick={() => setIsResetOpen(true)}
@@ -677,262 +414,119 @@ export default function SettingPage() {
                     <p className="text-sm font-semibold text-rose-600">
                       Reset All Transactions
                     </p>
-                    <p className="text-xs text-rose-400">
-                      This action cannot be undone
-                    </p>
+                    <p className="text-xs text-rose-400">This action cannot be undone</p>
                   </div>
-                  <ChevronDown size={16} className="text-rose-300 -rotate-90" />
                 </button>
               </div>
             </article>
 
-            {/* Privacy & Security */}
             <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
                   <Shield size={18} />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">
-                    Privacy & Security
-                  </p>
+                  <p className="text-sm font-semibold text-slate-800">Privacy & Security</p>
                   <p className="text-xs text-slate-400">Protect your account</p>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between py-3 px-4 rounded-2xl hover:bg-slate-50 transition-colors">
                   <div>
-                    <p className="text-sm font-medium text-slate-800">
-                      Biometric Login
-                    </p>
-                    <p className="text-[10px] text-slate-400">
-                      Use fingerprint or face ID
-                    </p>
+                    <p className="text-sm font-medium text-slate-800">Biometric Login</p>
+                    <p className="text-[10px] text-slate-400">Use fingerprint or face ID</p>
                   </div>
                   <ToggleSwitch
                     enabled={settings.biometric_login}
                     onChange={() =>
-                      saveSetting("biometric_login", !settings.biometric_login)
+                      saveSetting('biometric_login', !settings.biometric_login)
                     }
                   />
                 </div>
                 <div className="flex items-center justify-between py-3 px-4 rounded-2xl hover:bg-slate-50 transition-colors">
                   <div>
-                    <p className="text-sm font-medium text-slate-800">
-                      Transaction PIN
-                    </p>
+                    <p className="text-sm font-medium text-slate-800">Transaction PIN</p>
                     <p className="text-[10px] text-slate-400">
-                      {settings.transaction_pin
-                        ? "PIN: ****"
-                        : "Required for payments"}
+                      {settings.transaction_pin ? 'PIN: ****' : 'Required for payments'}
                     </p>
                   </div>
                   <button
-                    onClick={handleChangePin}
+                    onClick={() => setShowPinModal(true)}
                     className="flex items-center gap-1.5 rounded-xl bg-[#8B5CF6] px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700 transition-colors"
                   >
-                    <Lock size={12} />{" "}
-                    {settings.transaction_pin ? "Change" : "Set PIN"}
+                    <Lock size={12} /> {settings.transaction_pin ? 'Change' : 'Set PIN'}
                   </button>
                 </div>
               </div>
             </article>
-
-            {/* ── PIN Modal ── */}
-            {showPinModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                <div className="bg-white rounded-3xl p-6 w-full max-w-sm border border-slate-100 shadow-xl">
-                  <h2 className="text-lg font-bold text-slate-900 mb-4">
-                    Change Transaction PIN
-                  </h2>
-
-                  {pinError && (
-                    <div className="bg-rose-50 text-rose-600 text-sm rounded-xl p-3 mb-4">
-                      {pinError}
-                    </div>
-                  )}
-
-                  <div className="space-y-3">
-                    {settings?.transaction_pin && (
-                      <div>
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                          Current PIN
-                        </label>
-                        <input
-                          type="password"
-                          value={pinData.currentPin}
-                          onChange={(e) =>
-                            setPinData({
-                              ...pinData,
-                              currentPin: e.target.value,
-                            })
-                          }
-                          maxLength={6}
-                          placeholder="••••••"
-                          className="w-full mt-1 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20 tracking-[0.5em] text-center"
-                        />
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                        New PIN
-                      </label>
-                      <input
-                        type="password"
-                        value={pinData.newPin}
-                        onChange={(e) =>
-                          setPinData({ ...pinData, newPin: e.target.value })
-                        }
-                        maxLength={6}
-                        placeholder="4-6 digits"
-                        className="w-full mt-1 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20 tracking-[0.5em] text-center"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                        Confirm New PIN
-                      </label>
-                      <input
-                        type="password"
-                        value={pinData.confirmPin}
-                        onChange={(e) =>
-                          setPinData({ ...pinData, confirmPin: e.target.value })
-                        }
-                        maxLength={6}
-                        placeholder="4-6 digits"
-                        className="w-full mt-1 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20 tracking-[0.5em] text-center"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 mt-4">
-                    <button
-                      onClick={() => {
-                        setShowPinModal(false);
-                        setPinError("");
-                        setPinData({
-                          currentPin: "",
-                          newPin: "",
-                          confirmPin: "",
-                        });
-                      }}
-                      className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSavePin}
-                      className="flex-1 rounded-xl bg-[#8B5CF6] py-2.5 text-sm font-medium text-white hover:bg-violet-700"
-                    >
-                      Save PIN
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ── PIN Modal ── */}
-            {showPinModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                <div className="bg-white rounded-3xl p-6 w-full max-w-sm border border-slate-100 shadow-xl">
-                  <h2 className="text-lg font-bold text-slate-900 mb-4">
-                    {isSettingNewPin
-                      ? "Set Transaction PIN"
-                      : "Change Transaction PIN"}
-                  </h2>
-
-                  {pinError && (
-                    <div className="bg-rose-50 text-rose-600 text-sm rounded-xl p-3 mb-4">
-                      {pinError}
-                    </div>
-                  )}
-
-                  <div className="space-y-3">
-                    {/* Current PIN - HANYA untuk Change PIN (bukan Set PIN) */}
-                    {!isSettingNewPin && settings?.transaction_pin && (
-                      <div>
-                        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                          Current PIN
-                        </label>
-                        <input
-                          type="password"
-                          value={pinData.currentPin}
-                          onChange={(e) =>
-                            setPinData({
-                              ...pinData,
-                              currentPin: e.target.value,
-                            })
-                          }
-                          maxLength={6}
-                          placeholder="••••••"
-                          className="w-full mt-1 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20 text-center tracking-[0.5em]"
-                        />
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                        New PIN
-                      </label>
-                      <input
-                        type="password"
-                        value={pinData.newPin}
-                        onChange={(e) =>
-                          setPinData({ ...pinData, newPin: e.target.value })
-                        }
-                        maxLength={6}
-                        placeholder="4-6 digits"
-                        className="w-full mt-1 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                        Confirm PIN
-                      </label>
-                      <input
-                        type="password"
-                        value={pinData.newPin}
-                        onChange={(e) =>
-                          setPinData({ ...pinData, newPin: e.target.value })
-                        }
-                        maxLength={6}
-                        placeholder="4-6 digits"
-                        className="w-full mt-1 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 mt-4">
-                    <button
-                      onClick={() => {
-                        setShowPinModal(false);
-                        setPinError("");
-                        setPinData({
-                          currentPin: "",
-                          newPin: "",
-                          confirmPin: "",
-                        });
-                      }}
-                      className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSavePin}
-                      className="flex-1 rounded-xl bg-[#8B5CF6] py-2.5 text-sm font-medium text-white hover:bg-violet-700"
-                    >
-                      {isSettingNewPin ? "Set PIN" : "Save PIN"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </main>
+
+      {showPinModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm border border-slate-100 shadow-xl">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">
+              {settings.transaction_pin ? 'Change Transaction PIN' : 'Set Transaction PIN'}
+            </h2>
+            {pinError && (
+              <div className="bg-rose-50 text-rose-600 text-sm rounded-xl p-3 mb-4">
+                {pinError}
+              </div>
+            )}
+            <div className="space-y-3">
+              {settings.transaction_pin && (
+                <input
+                  type="password"
+                  value={pinData.currentPin}
+                  onChange={(event) =>
+                    setPinData({ ...pinData, currentPin: event.target.value })
+                  }
+                  maxLength={6}
+                  placeholder="Current PIN"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
+                />
+              )}
+              <input
+                type="password"
+                value={pinData.newPin}
+                onChange={(event) => setPinData({ ...pinData, newPin: event.target.value })}
+                maxLength={6}
+                placeholder="New PIN"
+                className="w-full rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
+              />
+              <input
+                type="password"
+                value={pinData.confirmPin}
+                onChange={(event) =>
+                  setPinData({ ...pinData, confirmPin: event.target.value })
+                }
+                maxLength={6}
+                placeholder="Confirm PIN"
+                className="w-full rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
+              />
+            </div>
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => {
+                  setShowPinModal(false)
+                  setPinError('')
+                  setPinData({ currentPin: '', newPin: '', confirmPin: '' })
+                }}
+                className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSavePin}
+                className="flex-1 rounded-xl bg-[#8B5CF6] py-2.5 text-sm font-medium text-white hover:bg-violet-700"
+              >
+                Save PIN
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ResetModal
         isOpen={isResetOpen}
@@ -940,5 +534,5 @@ export default function SettingPage() {
         onConfirm={handleReset}
       />
     </div>
-  );
+  )
 }

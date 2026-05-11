@@ -76,12 +76,18 @@ function TransactionCard({ tx, settings }) {
 
 // ── MAIN COMPONENT ──
 export default function TransactionPage() {
-  const { transactions, settings } = useAppContext();
+  const { transactions, settings, addTransaction } = useAppContext();
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [sortBy, setSortBy] = useState("Newest");
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form, setForm] = useState({
+    merchant: "",
+    category: "Food",
+    amount: "",
+    type: "expense",
+  });
 
   // 🔥 Format mata uang sesuai setting
   const symbol = settings?.currency === 'USD' ? '$' : 'Rp';
@@ -112,6 +118,25 @@ export default function TransactionPage() {
   // Pagination
   const totalPages = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
   const paginatedTxns = filteredTransactions.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  const handleAddTransaction = async () => {
+    const amount =
+      form.type === "expense"
+        ? -Math.abs(Number(form.amount))
+        : Math.abs(Number(form.amount));
+    const saved = await addTransaction({
+      merchant: form.merchant,
+      category: form.category,
+      amount,
+      type: form.type,
+    });
+
+    if (saved) {
+      setForm({ merchant: "", category: "Food", amount: "", type: "expense" });
+      setIsModalOpen(false);
+      setCurrentPage(1);
+    }
+  };
 
   return (
     <div className="h-[calc(100vh-2.5rem)] flex flex-col gap-5">
@@ -255,12 +280,55 @@ export default function TransactionPage() {
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
             </div>
             <div className="space-y-4">
-              <input type="text" placeholder="Merchant" className="w-full rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20" />
-              <input type="number" placeholder="Amount" className="w-full rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20" />
+              <input
+                type="text"
+                value={form.merchant}
+                onChange={(event) => setForm({ ...form, merchant: event.target.value })}
+                placeholder="Merchant"
+                className="w-full rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
+              />
+              <select
+                value={form.category}
+                onChange={(event) => setForm({ ...form, category: event.target.value })}
+                className="w-full rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
+              >
+                <option>Food</option>
+                <option>Transport</option>
+                <option>Gaming</option>
+                <option>Internet</option>
+                <option>Subscription</option>
+                <option>Shopping</option>
+                <option>Salary</option>
+                <option>Education</option>
+                <option>Entertainment</option>
+              </select>
+              <input
+                type="number"
+                value={form.amount}
+                onChange={(event) => setForm({ ...form, amount: event.target.value })}
+                placeholder="Amount"
+                className="w-full rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                {["expense", "income"].map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setForm({ ...form, type })}
+                    className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+                      form.type === type
+                        ? "bg-[#8B5CF6] text-white"
+                        : "bg-slate-50 text-slate-500 border border-slate-100"
+                    }`}
+                  >
+                    {type === "expense" ? "Expense" : "Income"}
+                  </button>
+                ))}
+              </div>
               <div className="flex gap-3">
                 <button onClick={() => setIsModalOpen(false)}
                   className="flex-1 rounded-xl border border-slate-200 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
-                <button onClick={() => setIsModalOpen(false)}
+                <button onClick={handleAddTransaction}
                   className="flex-1 rounded-xl bg-[#8B5CF6] py-2 text-sm font-medium text-white hover:bg-violet-700">Save</button>
               </div>
             </div>

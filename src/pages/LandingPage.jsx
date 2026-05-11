@@ -1,9 +1,8 @@
 // src/pages/LandingPage.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowRight,
   LogIn,
-  Zap,
   Shield,
   BarChart3,
   Wallet,
@@ -24,8 +23,6 @@ export default function LandingPage({ onGetStarted, onLogin }) {
   // ========== SEMUA HOOK DIPANGGIL DIATAS (No conditional!) ==========
   const { theme, toggleTheme, loading } = useTheme();
   const [scrolled, setScrolled] = useState(false);
-  const [animated, setAnimated] = useState({});
-  const observerRef = useRef(null);
 
   // ========== useEffect untuk scroll & intersection observer ==========
   useEffect(() => {
@@ -34,23 +31,8 @@ export default function LandingPage({ onGetStarted, onLogin }) {
     };
     window.addEventListener("scroll", handleScroll);
 
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setAnimated((prev) => ({ ...prev, [entry.target.id]: true }));
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    const elements = document.querySelectorAll(".animate-on-scroll");
-    elements.forEach((el) => observerRef.current.observe(el));
-
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      if (observerRef.current) observerRef.current.disconnect();
     };
   }, []);
 

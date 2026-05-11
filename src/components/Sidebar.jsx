@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import {
   Home,
   MessageSquare,
@@ -11,8 +10,8 @@ import {
   LogOut,
   Shield,
 } from "lucide-react";
-import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
+import { useAppContext } from "../context/AppContext";
 
 const NAV_ITEMS = [
   { id: "home", icon: Home, label: "Home", page: "Dashboard" },
@@ -63,33 +62,9 @@ function NavItem({ icon: Icon, label, active, badge, onClick }) {
 }
 
 export default function Sidebar({ currentPage, setCurrentPage }) {
-  const [billsCount, setBillsCount] = useState(0);
   const { user, role, signOut } = useAuth();
-  const [profile, setProfile] = useState({ name: "Loading...", title: "" });
-  const [avatarUrl, setAvatarUrl] = useState(() => {
-    return localStorage.getItem("majumoney_avatar") || null;
-  });
-
-  // Load profile from Supabase
-  useEffect(() => {
-    if (user) {
-      supabase
-        .from("user_profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .single()
-        .then(({ data }) => {
-          if (data) {
-            setProfile(data);
-            localStorage.setItem("majumoney_profile", JSON.stringify(data));
-            if (data.avatar_url) {
-              setAvatarUrl(data.avatar_url);
-              localStorage.setItem("majumoney_avatar", data.avatar_url);
-            }
-          }
-        });
-    }
-  }, [user]);
+  const { profile, activeBillsCount } = useAppContext();
+  const avatarUrl = profile?.avatar_url || null;
 
   const getActiveTab = () => {
     const navItem = NAV_ITEMS.find((item) => item.page === currentPage);
@@ -104,42 +79,6 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
 
   const activeTab = getActiveTab();
 
-  useEffect(() => {
-    const fetchBillsCount = async () => {
-      const { count } = await supabase
-        .from("bills")
-        .select("*", { count: "exact", head: true })
-        .neq("status", "paid");
-      setBillsCount(count || 0);
-    };
-    fetchBillsCount();
-  }, []);
-
-  // Listen for profile updates
-  useEffect(() => {
-    const handleProfileUpdate = async () => {
-      if (user) {
-        const { data } = await supabase
-          .from("user_profiles")
-          .select("*")
-          .eq("user_id", user.id)
-          .single();
-        if (data) {
-          setProfile(data);
-          localStorage.setItem("majumoney_profile", JSON.stringify(data));
-          if (data.avatar_url) {
-            setAvatarUrl(data.avatar_url);
-            localStorage.setItem("majumoney_avatar", data.avatar_url);
-          }
-        }
-      }
-    };
-
-    window.addEventListener("profileUpdated", handleProfileUpdate);
-    return () =>
-      window.removeEventListener("profileUpdated", handleProfileUpdate);
-  }, [user]);
-
   return (
     <aside className="fixed h-screen top-0 left-0 w-[260px] shrink-0 flex flex-col gap-6 rounded-3xl bg-white p-5 border border-slate-100 shadow-sm z-20 overflow-y-auto">
       {/* Profile Header */}
@@ -152,7 +91,7 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
               alt=""
             />
           ) : (
-            profile.name
+            profile?.name
               ?.split(" ")
               .map((n) => n[0])
               .join("") || "JM"
@@ -160,9 +99,11 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-slate-800 truncate">
-            {profile.name}
+            {profile?.name || user?.email || "Account"}
           </p>
-          <p className="text-[10px] text-slate-400 truncate">{profile.title}</p>
+          <p className="text-[10px] text-slate-400 truncate">
+            {profile?.title || role}
+          </p>
         </div>
       </div>
 
@@ -179,8 +120,8 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
                 label={item.label}
                 badge={
                   item.id === "payment"
-                    ? billsCount > 0
-                      ? billsCount
+                    ? activeBillsCount > 0
+                      ? activeBillsCount
                       : null
                     : null
                 }
@@ -232,7 +173,6 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
             onClick={async () => {
               if (item.id === "logout") {
                 await signOut();
-                window.location.reload();
               } else if (item.page) {
                 setCurrentPage(item.page);
               }

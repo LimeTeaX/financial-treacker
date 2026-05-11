@@ -1,8 +1,8 @@
 // src/pages/AuthPage.jsx
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useTheme } from '../hooks/useTheme'
 import { useAuth } from '../context/AuthContext'
-import { ArrowLeft, Mail, Lock, UserPlus, LogIn, Sparkles, Shield, Wallet, TrendingUp, X } from "lucide-react";
+import { ArrowLeft, Mail, Lock, UserPlus, LogIn, Sparkles, Shield, Wallet, TrendingUp } from "lucide-react";
 
 export default function AuthPage({ defaultMode = 'login', onBack }) {  // 🔥 Terima param
   const { signIn, signUp, signInWithGoogle } = useAuth()
@@ -11,19 +11,15 @@ export default function AuthPage({ defaultMode = 'login', onBack }) {  // 🔥 T
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
-  const { theme } = useTheme()
+  useTheme()
 
   // 🔥 Sync state dengan prop
-  useEffect(() => {
-    setIsLogin(defaultMode === 'login')
-  }, [defaultMode])
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setMessage('')
 
-    const { data, error } = isLogin
+    const { error } = isLogin
       ? await signIn(email, password)
       : await signUp(email, password)
 
@@ -163,6 +159,18 @@ export default function AuthPage({ defaultMode = 'login', onBack }) {  // 🔥 T
                 </div>
               )}
 
+              {error && (
+                <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-600">
+                  {error}
+                </p>
+              )}
+
+              {message && (
+                <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-600">
+                  {message}
+                </p>
+              )}
+
               {/* Submit button */}
               <button
                 type="submit"
@@ -199,7 +207,7 @@ export default function AuthPage({ defaultMode = 'login', onBack }) {  // 🔥 T
               <button
                 onClick={async () => {
                   const { error } = await signInWithGoogle()
-                  if (error) console.error('Google login error:', error)
+                  if (error) setError(error.message)
                 }}
                 className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
               >

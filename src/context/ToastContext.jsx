@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // src/context/ToastContext.jsx
 import { createContext, useContext, useState, useCallback } from 'react'
 import Toast from '../components/Toast'
