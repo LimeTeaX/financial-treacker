@@ -83,12 +83,11 @@ useEffect(() => {
   loadSettings()
 }, [])
 
-  // Save setting ke Supabase
+  // SAVE SETTING
 const saveSetting = async (key, value) => {
   setSettings(prev => ({ ...prev, [key]: value }))
   await supabase.from('user_settings').update({ [key]: value }).eq('id', 1)
   
-  // 🔥 Simpan theme ke localStorage buat instant load
   if (key === 'theme') {
     localStorage.setItem('majumoney_theme', value)
   }
@@ -113,7 +112,7 @@ useEffect(() => {
   }
 }, [settings?.theme])
 
-// Dengarkan perubahan tema sistem
+// Perubahan Sistem Theme
 useEffect(() => {
   if (!settings || settings.theme !== 'system') return
   

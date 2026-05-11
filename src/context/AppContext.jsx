@@ -3,7 +3,24 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 
 const AppContext = createContext()
+export const formatCurrency = (amount, settings) => {
+  const symbol = settings?.currency === 'USD' ? '$' : 'Rp'
+  const formatted = Math.abs(amount || 0).toLocaleString(
+    settings?.currency === 'USD' ? 'en-US' : 'id-ID'
+  )
+  return `${symbol} ${formatted}`
+}
 
+export const formatDate = (dateStr, settings) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  if (settings?.date_format === 'MM/DD/YYYY') {
+    return date.toLocaleDateString('en-US')
+  } else if (settings?.date_format === 'YYYY-MM-DD') {
+    return date.toISOString().split('T')[0]
+  }
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+}
 export function AppProvider({ children }) {
   const { user } = useAuth()
   const [transactions, setTransactions] = useState([])
@@ -68,6 +85,15 @@ export function AppProvider({ children }) {
     setLoading(false)
   }
 
+  const [settings, setSettings] = useState(null)
+
+useEffect(() => {
+  supabase.from('user_settings').select('*').eq('id', 1).single()
+    .then(({ data }) => {
+      if (data) setSettings(data)
+    })
+}, [])
+
   const addTransaction = async (newTx) => {
     const now = new Date()
     const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
@@ -126,11 +152,11 @@ export function AppProvider({ children }) {
     )
   }
 
-  return (
-    <AppContext.Provider value={{ transactions, addTransaction, updateTransaction, deleteTransaction }}>
-      {children}
-    </AppContext.Provider>
-  )
+ return (
+  <AppContext.Provider value={{ transactions, settings, addTransaction, updateTransaction, deleteTransaction }}>
+    {children}
+  </AppContext.Provider>
+)
 }
 
 export function useAppContext() {

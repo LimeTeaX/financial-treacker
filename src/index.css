@@ -155,3 +155,32 @@ html, body {
 .dark .hover\:bg-slate-100:hover {
   background-color: rgba(255,255,255,0.08) !important;
 }
+
+/* Dark mode - teks Authorized */
+.dark .text-emerald-600 {
+  color: #6ee7b7 !important;
+}
+
+.dark .bg-emerald-50 {
+  background-color: #064e3b !important;
+}
+
+/* Dark mode - Stats Cards Profile */
+.dark .bg-violet-50 {
+  background-color: rgba(139, 92, 246, 0.2) !important;
+}
+.dark .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+}
+.dark .bg-rose-50 {
+  background-color: rgba(244, 63, 94, 0.2) !important;
+}
+.dark .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+/* Teks di dark mode */
+.dark .text-violet-600 { color: #a78bfa !important; }
+.dark .text-emerald-600 { color: #6ee7b7 !important; }
+.dark .text-rose-600 { color: #fda4af !important; }
+.dark .text-amber-600 { color: #fcd34d !important; }
