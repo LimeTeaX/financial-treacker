@@ -103,6 +103,12 @@ html, body {
 
 /* ── CUSTOM SCROLLBAR ── */
 ::-webkit-scrollbar {
+  width: 0px;  /* 🔥 Sembunyiin default */
+  height: 0px;
+}
+
+/* Muncul cuma pas hover */
+*:hover::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
@@ -112,21 +118,39 @@ html, body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: transparent;  /* 🔥 Sembunyiin juga */
   border-radius: 10px;
 }
 
-::-webkit-scrollbar-thumb:hover {
+*:hover::-webkit-scrollbar-thumb {
+  background: #cbd5e1;  /* 🔥 Muncul pas hover */
+}
+
+*:hover::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
 /* Dark mode scrollbar */
-.dark ::-webkit-scrollbar-thumb {
+.dark *:hover::-webkit-scrollbar-thumb {
   background: #475569;
 }
 
-.dark ::-webkit-scrollbar-thumb:hover {
+.dark *:hover::-webkit-scrollbar-thumb:hover {
   background: #64748b;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: none;  /* 🔥 Sembunyiin */
+}
+
+*:hover {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.dark *:hover {
+  scrollbar-color: #475569 transparent;
 }
 
 /* Firefox */

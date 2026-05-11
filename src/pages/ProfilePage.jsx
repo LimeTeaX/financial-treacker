@@ -167,7 +167,7 @@ function DownloadModal({ isOpen, onClose, transactions }) {
 // ── MAIN COMPONENT ──
 export default function ProfilePage() {
   const { transactions, settings } = useAppContext();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [toggles, setToggles] = useState({
     "2fa": true,
     biometric: false,
@@ -741,7 +741,13 @@ export default function ProfilePage() {
               >
                 <Download size={16} /> Export Data
               </button>
-              <button className="flex items-center justify-center gap-2 rounded-2xl bg-rose-50 border border-rose-100 px-4 py-3 text-sm font-medium text-rose-600 hover:bg-rose-100 transition-colors">
+              <button
+                onClick={async () => {
+                  await signOut();
+                  window.location.reload();
+                }}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-rose-50 border border-rose-100 px-4 py-3 text-sm font-medium text-rose-600 hover:bg-rose-100 transition-colors"
+              >
                 <LogOut size={16} /> Log Out
               </button>
             </div>
