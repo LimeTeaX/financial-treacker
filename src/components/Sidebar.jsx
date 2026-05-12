@@ -37,16 +37,10 @@ const BOTTOM_ITEMS = [
 ];
 
 function NavItem({ icon: Icon, label, active, badge, onClick }) {
-  const handleClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onClick?.();
-  };
-
   return (
     <button
-      onClick={handleClick}
-      className="group relative flex w-full items-center justify-center lg:justify-start gap-3 rounded-xl px-3 py-3 text-left transition-all duration-200 hover:bg-slate-800/50"
+      onClick={onClick}
+      className="group relative flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-all duration-200 hover:bg-slate-800/50"
     >
       {active && (
         <motion.div
@@ -58,31 +52,21 @@ function NavItem({ icon: Icon, label, active, badge, onClick }) {
         />
       )}
 
-      <span
-        className={`inline-flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 ${
-          active
-            ? "bg-emerald-500/20 text-emerald-400"
-            : "bg-slate-800/50 text-slate-400 group-hover:bg-slate-700 group-hover:text-white"
-        }`}
-      >
+      <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 ${active ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-800/50 text-slate-400 group-hover:bg-slate-700 group-hover:text-white"
+        }`}>
         <Icon size={18} />
       </span>
 
-      <span className={`hidden lg:block flex-1 text-sm font-medium ${active ? "text-emerald-400" : "text-slate-400"}`}>
+      {/* 🔥 HAPUS hidden lg:block, biar label tetap muncul di mobile */}
+      <span className={`flex-1 text-sm font-medium ${active ? "text-emerald-400" : "text-slate-400"}`}>
         {label}
       </span>
 
       {badge && (
-        <span className="hidden lg:inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[10px] font-semibold text-white">
+        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[10px] font-semibold text-white">
           {badge}
         </span>
       )}
-
-      <div className="absolute left-full ml-4 px-3 py-2 bg-slate-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-xl border border-slate-700 lg:hidden">
-        {label}
-        {badge && ` (${badge})`}
-        <div className="absolute right-full top-1/2 -translate-y-1/2 border-8 border-transparent border-r-slate-800" />
-      </div>
     </button>
   );
 }
