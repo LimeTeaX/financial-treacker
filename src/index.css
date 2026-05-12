@@ -1,4 +1,87 @@
+/* index.css - MoneyPulse Final Theme (Emerald + Glassmorphism) */
+
 @import "tailwindcss";
+
+/* ========== CSS VARIABLES (FIGMA EMERALD THEME) ========== */
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #020617;
+  --card: #ffffff;
+  --card-foreground: #020617;
+  --primary: #10b981;
+  --primary-foreground: #ffffff;
+  --primary-hover: #059669;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #020617;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #10b981;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --border-glow: rgba(16, 185, 129, 0.3);
+  --ring: #10b981;
+  --radius: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-3xl: 2.5rem;
+}
+
+.dark {
+  --background: #020617;
+  --foreground: #f8fafc;
+  --card: #0f172a;
+  --card-foreground: #f8fafc;
+  --primary: #10b981;
+  --primary-foreground: #020617;
+  --primary-hover: #34d399;
+  --secondary: #1e293b;
+  --secondary-foreground: #f8fafc;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #10b981;
+  --accent-foreground: #020617;
+  --border: #1e293b;
+  --border-glow: rgba(16, 185, 129, 0.2);
+}
+
+/* ========== TAILWIND THEME EXTENSIONS ========== */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-border-glow: var(--border-glow);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 12px);
+  --radius-3xl: calc(var(--radius) + 24px);
+}
+
+/* ========== GLOBAL STYLES ========== */
+* {
+  border-color: var(--border);
+  outline-color: var(--ring)/50;
+}
 
 html, body {
   font-family: "Inter", system-ui, -apple-system, sans-serif;
@@ -6,36 +89,171 @@ html, body {
   overflow-x: hidden;
   width: 100%;
   max-width: 100vw;
+  background-color: var(--background);
+  color: var(--foreground);
+  scroll-behavior: smooth;
 }
 
 #root {
   overflow-x: hidden;
 }
 
+/* ========== TYPOGRAPHY ========== */
+h1, h2, h3, h4 {
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+h1 { font-size: 2rem; line-height: 1.2; }
+h2 { font-size: 1.5rem; line-height: 1.3; }
+h3 { font-size: 1.25rem; line-height: 1.4; }
+h4 { font-size: 1rem; line-height: 1.5; }
+
+/* Font untuk angka monospace */
+.font-mono-money {
+  font-family: "JetBrains Mono", "Inter", monospace;
+  font-weight: 500;
+}
+
+/* ========== ANIMATIONS ========== */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
 }
 
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out;
 }
 
-/* ── DARK MODE COMPLETE ── */
+.animate-gradient {
+  animation: gradient 3s ease infinite;
+  background-size: 200% auto;
+}
+
+.animate-on-scroll {
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========== CUSTOM SCROLLBAR (HOVER MUNCUL) ========== */
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+
+*:hover::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 10px;
+}
+
+*:hover::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
+*:hover::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark *:hover::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+.dark *:hover::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: none;
+}
+
+*:hover {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.dark *:hover {
+  scrollbar-color: #475569 transparent;
+}
+
+/* ========== GLASSMORPHISM UTILITIES ========== */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .glass {
+  background: rgba(15, 23, 42, 0.5);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-2xl);
+}
+
+.dark .glass-card {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+/* ========== DARK MODE OVERRIDES (COMPATIBILITY) ========== */
 .dark body,
 .dark #root,
 .dark main,
 .dark .min-h-screen {
-  background-color: #0f172a !important;
+  background-color: var(--background) !important;
 }
 
 .dark .bg-white,
 .dark .bg-\[\#F8FAFC\] {
-  background-color: #1e293b !important;
+  background-color: var(--card) !important;
 }
 
 .dark .bg-slate-50 {
-  background-color: #1e293b !important;
+  background-color: var(--secondary) !important;
 }
 
 .dark .bg-slate-100 {
@@ -43,27 +261,27 @@ html, body {
 }
 
 .dark aside {
-  background-color: #1e293b !important;
-  border-color: #334155 !important;
+  background-color: var(--card) !important;
+  border-color: var(--border) !important;
 }
 
 .dark article,
 .dark .rounded-3xl,
 .dark .rounded-2xl {
-  background-color: #1e293b !important;
-  border-color: #334155 !important;
+  background-color: var(--card) !important;
+  border-color: var(--border) !important;
 }
 
 .dark input,
 .dark select {
-  background-color: #334155 !important;
-  color: #e2e8f0 !important;
-  border-color: #475569 !important;
+  background-color: var(--secondary) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
 }
 
 .dark .text-slate-900,
 .dark .text-slate-800 {
-  color: #e2e8f0 !important;
+  color: var(--foreground) !important;
 }
 
 .dark .text-slate-700,
@@ -81,186 +299,73 @@ html, body {
 
 .dark .border-slate-100,
 .dark .border-slate-200 {
-  border-color: #334155 !important;
+  border-color: var(--border) !important;
 }
 
 .dark .shadow-sm {
-  box-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
-}
-
-.dark button.text-slate-400 {
-  color: #64748b !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
 }
 
 .dark .divide-slate-50 > * {
-  border-color: #334155 !important;
+  border-color: var(--border) !important;
 }
 
 .dark option {
-  background-color: #1e293b;
-  color: #e2e8f0;
+  background-color: var(--card);
+  color: var(--foreground);
 }
 
-/* ── CUSTOM SCROLLBAR ── */
-::-webkit-scrollbar {
-  width: 0px;  /* 🔥 Sembunyiin default */
-  height: 0px;
-}
-
-/* Muncul cuma pas hover */
-*:hover::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: transparent;  /* 🔥 Sembunyiin juga */
-  border-radius: 10px;
-}
-
-*:hover::-webkit-scrollbar-thumb {
-  background: #cbd5e1;  /* 🔥 Muncul pas hover */
-}
-
-*:hover::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* Dark mode scrollbar */
-.dark *:hover::-webkit-scrollbar-thumb {
-  background: #475569;
-}
-
-.dark *:hover::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
-}
-
-/* Firefox */
-* {
-  scrollbar-width: none;  /* 🔥 Sembunyiin */
-}
-
-*:hover {
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
-}
-
-.dark *:hover {
-  scrollbar-color: #475569 transparent;
-}
-
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
-}
-
-.dark * {
-  scrollbar-color: #475569 transparent;
-}
-
-/* Hover di dark mode - lebih subtle */
+/* Hover effects di dark mode */
 .dark .hover\:bg-slate-50:hover {
-  background-color: rgba(255,255,255,0.05) !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 .dark .hover\:bg-slate-50\/60:hover {
-  background-color: rgba(255,255,255,0.08) !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 .dark tr:hover td {
-  background-color: rgba(255,255,255,0.03) !important;
+  background-color: rgba(255, 255, 255, 0.03) !important;
 }
 
 .dark .hover\:bg-slate-100:hover {
-  background-color: rgba(255,255,255,0.08) !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* Dark mode - teks Authorized */
+/* ========== PRIMARY COLOR COMPONENTS (EMERALD) ========== */
 .dark .text-emerald-600 {
-  color: #6ee7b7 !important;
+  color: var(--primary) !important;
 }
 
 .dark .bg-emerald-50 {
-  background-color: #064e3b !important;
+  background-color: rgba(16, 185, 129, 0.15) !important;
 }
 
-/* Dark mode - Stats Cards Profile */
+/* Stats Cards Profile */
 .dark .bg-violet-50 {
-  background-color: rgba(139, 92, 246, 0.2) !important;
+  background-color: rgba(16, 185, 129, 0.15) !important;
+}
+.dark .bg-rose-50 {
+  background-color: rgba(244, 63, 94, 0.15) !important;
+}
+.dark .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
 }
 .dark .bg-emerald-50 {
   background-color: rgba(16, 185, 129, 0.2) !important;
 }
-.dark .bg-rose-50 {
-  background-color: rgba(244, 63, 94, 0.2) !important;
-}
-.dark .bg-amber-50 {
-  background-color: rgba(245, 158, 11, 0.2) !important;
-}
 
-/* Teks di dark mode */
-.dark .text-violet-600 { color: #a78bfa !important; }
-.dark .text-emerald-600 { color: #6ee7b7 !important; }
+.dark .text-violet-600 { color: var(--primary) !important; }
+.dark .text-emerald-600 { color: var(--primary) !important; }
 .dark .text-rose-600 { color: #fda4af !important; }
 .dark .text-amber-600 { color: #fcd34d !important; }
 
-/* Di index.css - tambahin ini */
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
+/* ========== RESPONSIVE UTILITIES ========== */
+@layer utilities {
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
   }
-}
-
-@keyframes fadeInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes fadeInRight {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.animate-gradient {
-  animation: gradient 3s ease infinite;
-  background-size: 200% auto;
-}
-
-.animate-on-scroll {
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }

@@ -1,735 +1,197 @@
 // src/Dashboard.jsx
+import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAppContext } from "./context/AppContext";
 import { useToast } from "./context/ToastContext";
-import { useState, useMemo } from "react";
-import { MoreHorizontal, Plus, X } from "lucide-react";
+import { MoreHorizontal, Plus, X, TrendingUp, TrendingDown, Wallet, Eye, EyeOff } from "lucide-react";
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-// ── STAT CARD COMPONENT ──
-// Menampilkan 1 kartu statistik (Balance / Spending / Investment)
-function StatCard({
-  label,
-  value,
-  change,
-  positive,
-  sub,
-  color,
-  iconColor,
-  icon,
-}) {
+// Helper: get last 7 days sparkline data dari transaksi real
+const getSparklineData = (transactions) => {
+  const result = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split("T")[0];
+    const dayTxns = transactions.filter(t => t.date?.startsWith(dateStr));
+    const income = dayTxns.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
+    const expense = dayTxns.filter(t => t.type === "expense").reduce((s, t) => s + Math.abs(t.amount), 0);
+    result.push({ value: income - expense });
+  }
+  return result;
+};
+
+// Helper: get monthly chart data dari transaksi real
+const getMonthlyChartData = (transactions) => {
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const result = months.map(month => ({ month, income: 0, expense: 0 }));
+  transactions.forEach(tx => {
+    if (!tx.date) return;
+    const date = new Date(tx.date);
+    if (date.getFullYear() !== currentYear) return;
+    const monthIndex = date.getMonth();
+    if (tx.type === "income") result[monthIndex].income += Math.abs(tx.amount);
+    else result[monthIndex].expense += Math.abs(tx.amount);
+  });
+  return result;
+};
+
+function StatCard({ label, value, change, positive, sub, icon, iconColor }) {
   return (
-    <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm flex flex-col gap-4">
-      <div className="flex items-start justify-between">
-        <span
-          className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${color} ${iconColor}`}
-        >
-          {icon}
-        </span>
-        <button className="text-slate-300 hover:text-slate-500 transition-colors">
-          <MoreHorizontal size={18} />
+    <div className="rounded-xl bg-slate-900/50 border border-slate-800 p-5 hover:border-emerald-500/30 transition-all">
+      <div className="flex items-start justify-between mb-3"><div className={`p-2 rounded-lg ${iconColor}`}>{icon}</div></div>
+      <p className="text-sm text-slate-400">{label}</p><p className="text-2xl font-bold text-white mt-1">{value}</p>
+      <p className="text-xs mt-2"><span className={positive ? "text-emerald-400" : "text-red-400"}>{change}</span><span className="text-slate-500 ml-1">{sub}</span></p>
+    </div>
+  );
+}
+
+function HeroStatsCard({ transactions, settings }) {
+  const [isBalanceVisible, setIsBalanceVisible] = useState(true);
+  const totalBalance = transactions.reduce((acc, tx) => acc + (tx.type === "income" ? tx.amount : -Math.abs(tx.amount)), 0);
+  const symbol = settings?.currency === "USD" ? "$" : "Rp";
+  const formattedBalance = Math.abs(totalBalance).toLocaleString(settings?.currency === "USD" ? "en-US" : "id-ID");
+  const monthlyIncome = transactions.filter(t => t.type === "income" && new Date(t.date).getMonth() === new Date().getMonth()).reduce((s, t) => s + t.amount, 0);
+  const monthlyExpense = transactions.filter(t => t.type === "expense" && new Date(t.date).getMonth() === new Date().getMonth()).reduce((s, t) => s + Math.abs(t.amount), 0);
+  const monthlyChange = monthlyIncome - monthlyExpense;
+  const sparklineData = getSparklineData(transactions);
+
+  return (
+    <div className="relative bg-gradient-to-br from-slate-900 to-slate-900/80 border border-slate-800 rounded-2xl p-6 overflow-hidden group hover:border-emerald-500/30 transition-all">
+      <div className="absolute inset-0 opacity-10 pointer-events-none"><ResponsiveContainer width="100%" height="100%"><LineChart data={sparklineData}><Line type="monotone" dataKey="value" stroke="#10b981" strokeWidth={3} dot={false} /></LineChart></ResponsiveContainer></div>
+      <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/20 blur-[100px] rounded-full" />
+      <div className="relative z-10">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+          <div><div className="flex items-center gap-3 mb-2"><h2 className="text-sm font-medium text-slate-400">Total Balance</h2><button onClick={() => setIsBalanceVisible(!isBalanceVisible)} className="p-1 hover:bg-slate-800 rounded-lg">{isBalanceVisible ? <Eye size={14} className="text-slate-500" /> : <EyeOff size={14} className="text-slate-500" />}</button></div>
+          <h1 className="text-4xl md:text-5xl font-bold text-white">{isBalanceVisible ? `${symbol} ${formattedBalance}` : `${symbol} •••••••`}</h1>
+          <div className="flex items-center gap-2 mt-3"><span className={`text-sm font-semibold ${monthlyChange >= 0 ? "text-emerald-400" : "text-red-400"}`}>{monthlyChange >= 0 ? "+" : ""}{symbol} {Math.abs(monthlyChange).toLocaleString()}</span><span className="text-xs text-slate-500">this month</span></div></div>
+        </div>
+        <div className="grid grid-cols-3 gap-3 pt-4 border-t border-slate-800">
+          <div className="bg-slate-800/30 rounded-xl p-3"><p className="text-xs text-slate-500 mb-1">Monthly Income</p><p className="text-lg font-bold text-white">{symbol} {(monthlyIncome / 1000).toFixed(0)}k</p></div>
+          <div className="bg-slate-800/30 rounded-xl p-3"><p className="text-xs text-slate-500 mb-1">Monthly Expense</p><p className="text-lg font-bold text-white">{symbol} {(monthlyExpense / 1000).toFixed(0)}k</p></div>
+          <div className="bg-slate-800/30 rounded-xl p-3"><p className="text-xs text-slate-500 mb-1">Transactions</p><p className="text-lg font-bold text-white">{transactions.length}</p></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MoneyPulseChart({ transactions }) {
+  const chartData = getMonthlyChartData(transactions);
+  return (
+    <div className="rounded-xl bg-slate-900/50 border border-slate-800 p-5 hover:border-emerald-500/30 transition-all">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"><div><h3 className="text-lg font-semibold text-white">Money Pulse</h3><p className="text-sm text-slate-400">Monthly cash flow</p></div>
+      <div className="flex items-center gap-4"><div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-xs text-slate-400">Income</span></div><div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-rose-500" /><span className="text-xs text-slate-400">Expense</span></div></div></div>
+      <div className="h-72 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={chartData}>
+            <defs><linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.3} /><stop offset="95%" stopColor="#10b981" stopOpacity={0} /></linearGradient>
+            <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} /><stop offset="95%" stopColor="#f43f5e" stopOpacity={0} /></linearGradient></defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+            <XAxis dataKey="month" stroke="#64748b" fontSize={12} tickLine={false} />
+            <YAxis stroke="#64748b" fontSize={12} tickLine={false} tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`} />
+            <Tooltip contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #334155", borderRadius: "12px" }} labelStyle={{ color: "#f1f5f9", fontWeight: 600 }} formatter={(v) => [`Rp ${(v / 1000000).toFixed(1)}M`, ""]} />
+            <Area type="monotone" dataKey="income" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIncome)" />
+            <Area type="monotone" dataKey="expense" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill="url(#colorExpense)" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function RecentTransactions({ transactions, settings }) {
+  const symbol = settings?.currency === "USD" ? "$" : "Rp";
+  const recent = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+  if (recent.length === 0) return <div className="rounded-xl bg-slate-900/50 border border-slate-800 p-8 text-center"><p className="text-slate-500">No transactions yet</p></div>;
+  return (
+    <div className="rounded-xl bg-slate-900/50 border border-slate-800 overflow-hidden hover:border-emerald-500/30 transition-all">
+      <div className="p-5 border-b border-slate-800"><h3 className="text-lg font-semibold text-white">Recent Transactions</h3><p className="text-sm text-slate-400">Last 5 transactions</p></div>
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-slate-800/30"><tr><th className="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase">Merchant</th><th className="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase">Date</th><th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase">Amount</th></tr></thead>
+          <tbody className="divide-y divide-slate-800">
+            {recent.map(tx => (<tr key={tx.id} className="hover:bg-slate-800/30 transition-colors"><td className="px-5 py-3"><div><p className="text-sm font-medium text-white">{tx.merchant}</p><p className="text-xs text-slate-500 capitalize">{tx.category}</p></div></td>
+            <td className="px-5 py-3 text-sm text-slate-400">{new Date(tx.date).toLocaleDateString("id-ID")}</td>
+            <td className={`px-5 py-3 text-right text-sm font-semibold ${tx.type === "income" ? "text-emerald-400" : "text-white"}`}>{tx.type === "income" ? "+" : "-"}{symbol} {Math.abs(tx.amount).toLocaleString()}</td></tr>))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function QuickActions({ setIsModalOpen, onNavigate }) {
+  return (
+    <div className="rounded-xl bg-slate-900/50 border border-slate-800 p-5 hover:border-emerald-500/30 transition-all">
+      <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+      <div className="space-y-3">
+        <button onClick={() => setIsModalOpen(true)} className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3 text-sm font-semibold text-white hover:bg-emerald-600 transition-all">
+          <Plus size={16} /> Add Transaction
+        </button>
+        <button onClick={() => onNavigate?.("Analytics")} className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-700 py-3 text-sm font-medium text-slate-300 hover:bg-slate-800 transition-all">
+          <TrendingUp size={16} /> View Analytics
+        </button>
+        <button onClick={() => onNavigate?.("Payment")} className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-700 py-3 text-sm font-medium text-slate-300 hover:bg-slate-800 transition-all">
+          <Wallet size={16} /> Manage Bills
         </button>
       </div>
-      <div>
-        <p className="text-sm font-medium text-slate-400">{label}</p>
-        <p className="mt-1.5 text-2xl font-bold text-slate-900 tracking-tight">
-          {value}
-        </p>
-        <p className="mt-2 flex items-center gap-1.5 text-xs">
-          <span
-            className={`font-semibold ${positive ? "text-emerald-500" : "text-rose-500"}`}
-          >
-            {change}
-          </span>
-          <span className="text-slate-400">{sub}</span>
-        </p>
-      </div>
-    </article>
-  );
-}
-
-// ── BAR CHART COMPONENT ──
-// Menampilkan grafik batang Income vs Expenses per bulan
-function BarChart({ transactions }) {
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const now = new Date();
-  const currentYear = now.getFullYear();
-
-  // Hitung data per bulan
-  const barData = months.map((month, index) => {
-    const monthNum = String(index + 1).padStart(2, "0");
-    const monthTxns = transactions.filter((t) => {
-      if (!t.date) return false;
-      return t.date.startsWith(`${currentYear}-${monthNum}`);
-    });
-
-    const income = monthTxns
-      .filter((t) => t.type === "income")
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
-    const expenses = monthTxns
-      .filter((t) => t.type === "expense")
-      .reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
-
-    return {
-      month,
-      income: income / 1000,
-      scheduled: 0,
-      expenses: expenses / 1000,
-    };
-  });
-
-  const maxVal = Math.max(
-    ...barData.map((d) => Math.max(d.income, d.expenses)),
-    1,
-  );
-
-  return (
-    <div className="mt-6">
-      <div className="flex items-center gap-5 text-xs text-slate-400 mb-4">
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#8B5CF6]" />
-          Income
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-300" />
-          Expenses
-        </span>
-      </div>
-      <div className="relative h-52">
-        <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[10px] text-slate-300 pointer-events-none pr-2 w-8">
-          {[4, 3, 2, 1, 0].map((n) => (
-            <span key={n}>
-              {n > 0 ? `${((maxVal * n) / 4).toFixed(0)}k` : "0"}
-            </span>
-          ))}
-        </div>
-        <div className="ml-8 h-full flex items-end gap-1.5 pb-6">
-          {barData.map((d) => (
-            <div
-              key={d.month}
-              className="flex-1 flex flex-col items-center gap-0.5 h-full justify-end relative group"
-            >
-              <div className="flex items-end gap-0.5 w-full justify-center">
-                <div
-                  className="w-2 rounded-t-full bg-[#8B5CF6] transition-all"
-                  style={{ height: `${(d.income / maxVal) * 140}px` }}
-                />
-                <div
-                  className="w-2 rounded-t-full bg-orange-300 transition-all"
-                  style={{ height: `${(d.expenses / maxVal) * 140}px` }}
-                />
-              </div>
-              <span className="text-[9px] text-slate-300 mt-1.5">
-                {d.month}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
 
-// ── SPENDING GAUGE COMPONENT ──
-// Menampilkan gauge chart Income vs Spending bulan ini
-function SpendingGauge({ transactions, settings }) {
-  const now = new Date();
-  const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
-  const currentYear = now.getFullYear();
-
-  const thisMonthTxns = transactions.filter((t) => {
-    if (!t.date) return false;
-    return t.date.startsWith(`${currentYear}-${currentMonth}`);
-  });
-
-  const monthlyIncome = thisMonthTxns
-    .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
-  const monthlyExpenses = thisMonthTxns
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
-
-  const total = monthlyIncome + monthlyExpenses;
-  const incomePct = total > 0 ? monthlyIncome / total : 0;
-  const expensePct = total > 0 ? monthlyExpenses / total : 0;
-
-  const r = 90,
-    strokeWidth = 22,
-    circumference = Math.PI * r;
-  const symbol = settings?.currency === "USD" ? "$" : "Rp"; // 🔥 Currency support
-
-  return (
-    <div className="flex flex-col items-center mt-4">
-      <div className="flex items-center gap-4 text-xs text-slate-400 mb-3">
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#8B5CF6]" />
-          Income
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-orange-200" />
-          Spend
-        </span>
-      </div>
-      <div className="relative w-[220px] h-[120px] overflow-hidden">
-        <svg
-          width="220"
-          height="220"
-          viewBox="0 0 220 120"
-          className="absolute top-0 left-0"
-        >
-          <path
-            d="M 20 110 A 90 90 0 0 1 200 110"
-            fill="none"
-            stroke="#f1f5f9"
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-          />
-          <path
-            d="M 20 110 A 90 90 0 0 1 200 110"
-            fill="none"
-            stroke="#8B5CF6"
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            strokeDasharray={`${incomePct * circumference} ${circumference}`}
-            strokeDashoffset="0"
-          />
-          <path
-            d="M 20 110 A 90 90 0 0 1 200 110"
-            fill="none"
-            stroke="#fed7aa"
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            strokeDasharray={`${expensePct * circumference} ${circumference}`}
-            strokeDashoffset={`${-incomePct * circumference}`}
-          />
-        </svg>
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center">
-          <span className="text-[10px] uppercase tracking-widest text-slate-400 font-medium">
-            Spend
-          </span>
-          <span className="text-xl font-bold text-slate-800">
-            {symbol} {(monthlyExpenses / 1000).toFixed(0)}k
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── MAIN DASHBOARD COMPONENT ──
-export default function Dashboard() {
+export default function Dashboard({ onNavigate }) {
+  const { transactions, settings, addTransaction } = useAppContext();
   const { showToast } = useToast();
-  const {
-    transactions,
-    settings,
-    addTransaction,
-    updateTransaction,
-    deleteTransaction,
-  } = useAppContext();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form, setForm] = useState({ merchant: "", category: "Food", amount: "", type: "expense" });
 
-  // 🔥 Helper format amount sesuai currency setting
-  const formatAmount = (amount) => {
-    const symbol = settings?.currency === "USD" ? "$" : "Rp";
-    return `${symbol} ${Math.abs(amount || 0).toLocaleString(settings?.currency === "USD" ? "en-US" : "id-ID")}`;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const amount = form.type === "expense" ? -Math.abs(Number(form.amount)) : Math.abs(Number(form.amount));
+    const success = await addTransaction({ merchant: form.merchant, category: form.category, amount, type: form.type });
+    if (success) { setIsModalOpen(false); setForm({ merchant: "", category: "Food", amount: "", type: "expense" }); showToast("Transaction added successfully!", "success"); }
   };
 
-  const [txSort, setTxSort] = useState("Newest");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [form, setForm] = useState({
-    merchant: "",
-    category: "Food",
-    amount: "",
-    type: "expense",
-  });
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const [editingTx, setEditingTx] = useState(null);
-  const [editForm, setEditForm] = useState({
-    merchant: "",
-    category: "Food",
-    amount: "",
-  });
-
-  // 🔥 Hitung statistik bulan ini (Balance, Spending, Investment)
   const stats = useMemo(() => {
-    const now = new Date();
-    const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
-    const currentYear = now.getFullYear();
+    const monthlyIncome = transactions.filter(t => t.type === "income" && new Date(t.date).getMonth() === new Date().getMonth()).reduce((s, t) => s + t.amount, 0);
+    const monthlyExpense = transactions.filter(t => t.type === "expense" && new Date(t.date).getMonth() === new Date().getMonth()).reduce((s, t) => s + Math.abs(t.amount), 0);
+    const balance = monthlyIncome - monthlyExpense;
     const symbol = settings?.currency === "USD" ? "$" : "Rp";
-
-    const thisMonthTxns = transactions.filter((t) => {
-      if (!t.date) return false;
-      return t.date.startsWith(`${currentYear}-${currentMonth}`);
-    });
-
-    const monthlyIncome = thisMonthTxns
-      .filter((t) => t.type === "income")
-      .reduce((sum, t) => sum + (t.amount || 0), 0);
-    const monthlyExpenses = thisMonthTxns
-      .filter((t) => t.type === "expense")
-      .reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
-
-    const balance = monthlyIncome - monthlyExpenses;
-    const txnCount = thisMonthTxns.filter((t) => t.type === "expense").length;
-
-    // 🔥 Hitung bunga Seabank (2.5% per tahun = 0.025)
-    const yearlyInterest = Math.max(0, balance) * 0.025;
-    const dailyInterest = yearlyInterest / 365;
-
     return [
-      {
-        label: "Balance",
-        value: `${symbol} ${balance.toLocaleString(settings?.currency === "USD" ? "en-US" : "id-ID")}`,
-        change: monthlyIncome > 0 ? `${((balance / monthlyIncome) * 100).toFixed(1)}%` : "0%",
-        positive: balance >= 0,
-        sub: "savings rate this month",
-        color: "bg-violet-100",
-        iconColor: "text-violet-500",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 6v6l4 2" />
-          </svg>
-        ),
-      },
-      {
-        label: "Spending",
-        value: `${symbol} ${monthlyExpenses.toLocaleString(settings?.currency === "USD" ? "en-US" : "id-ID")}`,
-        change: `${txnCount} txns`,
-        positive: false,
-        sub: "this month",
-        color: "bg-rose-100",
-        iconColor: "text-rose-400",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-            <path d="M12 6v6l4 2" />
-          </svg>
-        ),
-      },
-      {
-        label: "Seabank Savings",
-        value: `${symbol} ${Math.max(0, balance).toLocaleString(settings?.currency === "USD" ? "en-US" : "id-ID")}`,
-        change: `+${symbol} ${dailyInterest.toLocaleString(settings?.currency === "USD" ? "en-US" : "id-ID")}/day`,
-        positive: true,
-        sub: "2.5% p.a. (daily payout)",
-        color: "bg-blue-100",
-        iconColor: "text-blue-500",
-        icon: (
-          <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2">
-            <rect x="2" y="6" width="20" height="12" rx="2" />
-            <path d="M12 10v4" />
-            <path d="M16 10v4" />
-            <path d="M8 10v4" />
-          </svg>
-        ),
-      },
+      { label: "Balance", value: `${symbol} ${balance.toLocaleString()}`, change: `${((balance / monthlyIncome) * 100).toFixed(1)}%`, positive: balance >= 0, sub: "vs last month", icon: <TrendingUp size={18} />, iconColor: "bg-emerald-500/10 text-emerald-400" },
+      { label: "Income", value: `${symbol} ${monthlyIncome.toLocaleString()}`, change: "+12.5%", positive: true, sub: "this month", icon: <TrendingUp size={18} />, iconColor: "bg-emerald-500/10 text-emerald-400" },
+      { label: "Expenses", value: `${symbol} ${monthlyExpense.toLocaleString()}`, change: "-8.2%", positive: false, sub: "this month", icon: <TrendingDown size={18} />, iconColor: "bg-red-500/10 text-red-400" },
     ];
   }, [transactions, settings]);
 
-  // Handle submit Add Transaction
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const amount =
-      form.type === "expense"
-        ? -Math.abs(Number(form.amount))
-        : Math.abs(Number(form.amount));
-    const success = await addTransaction({
-      merchant: form.merchant,
-      category: form.category,
-      amount,
-      type: form.type,
-    });
-    if (success) {
-      setIsModalOpen(false);
-      setForm({ merchant: "", category: "Food", amount: "", type: "expense" });
-      showToast("Transaksi berhasil ditambahkan! ✅", "success");
-    }
-  };
-
-  // Sort & limit recent transactions
-  const sortedTxns = useMemo(() => {
-    if (!transactions || transactions.length === 0) return [];
-    const recent = [...transactions]
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 5);
-    if (txSort === "Oldest") return [...recent].reverse();
-    if (txSort === "Highest")
-      return [...recent].sort((a, b) => b.amount - a.amount);
-    if (txSort === "Lowest")
-      return [...recent].sort((a, b) => a.amount - b.amount);
-    return recent;
-  }, [transactions, txSort]);
+  if (transactions.length === 0) {
+    return <div className="max-w-4xl mx-auto flex justify-center py-20"><div className="text-center"><p className="text-slate-400 mb-2">No transactions yet</p><button onClick={() => setIsModalOpen(true)} className="text-emerald-400 hover:text-emerald-300 text-sm">Add your first transaction</button></div></div>;
+  }
 
   return (
-    <div className="mx-auto max-w-[1600px] gap-5">
-      <div className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
-        {/* ── HEADER ── */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-              Dashboard
-            </h1>
-            <p className="text-slate-500 mt-1">
-              Welcome back! Here's what's happening with your finances.
-            </p>
-          </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 rounded-xl bg-[#8B5CF6] px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-700 transition-colors"
-          >
-            <Plus size={16} /> Add Transaction
-          </button>
-        </div>
-
-        {/* ── STATS CARDS ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {stats.map((stat, i) => (
-            <StatCard key={i} {...stat} />
-          ))}
-        </div>
-
-        {/* ── CHARTS ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">
-              Income vs Expenses
-            </h2>
-            <BarChart transactions={transactions} />
-          </div>
-          <div className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">
-              Spending Breakdown
-            </h2>
-            <SpendingGauge transactions={transactions} settings={settings} />
-          </div>
-        </div>
-
-        {/* ── RECENT TRANSACTIONS ── */}
-        <div className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Recent Transactions
-            </h2>
-            <select
-              value={txSort}
-              onChange={(e) => setTxSort(e.target.value)}
-              className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-1.5 text-sm text-slate-700"
-            >
-              <option>Newest</option>
-              <option>Oldest</option>
-              <option>Highest</option>
-              <option>Lowest</option>
-            </select>
-          </div>
-
-          <table className="w-full">
-            <tbody className="divide-y divide-slate-50">
-              {sortedTxns.map((tx) => (
-                <tr
-                  key={tx.id}
-                  className="hover:bg-slate-50/60 transition-colors"
-                >
-                  <td className="py-3.5 pr-4">
-                    <div className="flex items-center gap-3">
-                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold bg-violet-100 text-[#8B5CF6]">
-                        {tx.merchant?.charAt(0) || "?"}
-                      </span>
-                      <div>
-                        <span className="font-medium text-slate-800 text-sm">
-                          {tx.merchant}
-                        </span>
-                        <p className="text-[10px] text-slate-400">{tx.date}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3.5 pr-4">
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${tx.status === "Completed"
-                          ? "bg-emerald-50 text-emerald-600"
-                          : tx.status === "Pending"
-                            ? "bg-orange-50 text-orange-500"
-                            : "bg-rose-50 text-rose-600"
-                        }`}
-                    >
-                      {tx.status || "Completed"}
-                    </span>
-                  </td>
-                  {/* 🔥 Amount dengan currency */}
-                  <td
-                    className={`py-3.5 text-right font-bold ${tx.type === "income" ? "text-emerald-500" : "text-slate-800"}`}
-                  >
-                    {tx.type === "income" ? "+" : "-"}
-                    {formatAmount(tx.amount)}
-                  </td>
-                  <td className="py-3.5 pl-4">
-                    <div className="relative">
-                      <button
-                        onClick={() =>
-                          setOpenMenuId(openMenuId === tx.id ? null : tx.id)
-                        }
-                        className="text-slate-300 hover:text-slate-500"
-                      >
-                        <MoreHorizontal size={18} />
-                      </button>
-                      {openMenuId === tx.id && (
-                        <div className="absolute right-0 top-8 bg-white rounded-2xl border border-slate-100 shadow-lg z-30 py-2 w-32">
-                          <button
-                            onClick={() => {
-                              setEditingTx(tx);
-                              setEditForm({
-                                merchant: tx.merchant,
-                                category: tx.category || "Food",
-                                amount: String(Math.abs(tx.amount || 0)),
-                              });
-                              setOpenMenuId(null);
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={async () => {
-                              const success = await deleteTransaction(tx.id);
-                              if (success)
-                                showToast(
-                                  "Transaksi berhasil dihapus!",
-                                  "success",
-                                );
-                              setOpenMenuId(null);
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm text-rose-500 hover:bg-rose-50"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">{stats.map((stat, i) => <StatCard key={i} {...stat} />)}</div>
+      <HeroStatsCard transactions={transactions} settings={settings} />
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 space-y-6"><MoneyPulseChart transactions={transactions} /><RecentTransactions transactions={transactions} settings={settings} /></div>
+        <div className="xl:col-span-1"><QuickActions setIsModalOpen={setIsModalOpen} onNavigate={onNavigate} /></div>
       </div>
 
-      {/* ── ADD TRANSACTION MODAL ── */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-md border border-slate-100 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-slate-900">
-                Add Transaction
-              </h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Merchant
-                </label>
-                <input
-                  type="text"
-                  value={form.merchant}
-                  onChange={(e) =>
-                    setForm({ ...form, merchant: e.target.value })
-                  }
-                  placeholder="Warung Just Is Resto"
-                  required
-                  className="w-full mt-1 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Category
-                </label>
-                <select
-                  value={form.category}
-                  onChange={(e) =>
-                    setForm({ ...form, category: e.target.value })
-                  }
-                  className="w-full mt-1 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
-                >
-                  <option>Food</option>
-                  <option>Transport</option>
-                  <option>Gaming</option>
-                  <option>Internet</option>
-                  <option>Subscription</option>
-                  <option>Shopping</option>
-                  <option>Salary</option>
-                  <option>Education</option>
-                  <option>Entertainment</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Amount
-                </label>
-                <input
-                  type="number"
-                  value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                  placeholder="50000"
-                  required
-                  className="w-full mt-1 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Type
-                </label>
-                <div className="flex gap-2 mt-1">
-                  {["expense", "income"].map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => setForm({ ...form, type })}
-                      className={`flex-1 rounded-xl px-4 py-2 text-sm font-medium transition-colors ${form.type === type ? "bg-[#8B5CF6] text-white" : "bg-slate-50 text-slate-500 border border-slate-100"}`}
-                    >
-                      {type === "expense" ? "Expense (-)" : "Income (+)"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 rounded-xl bg-[#8B5CF6] py-2.5 text-sm font-medium text-white hover:bg-violet-700"
-                >
-                  Add Transaction
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ── EDIT TRANSACTION MODAL ── */}
-      {editingTx && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-md border border-slate-100 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-slate-900">
-                Edit Transaction
-              </h2>
-              <button
-                onClick={() => setEditingTx(null)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const updatedAmount = Number(editForm.amount);
-                const finalAmount =
-                  editingTx.amount >= 0
-                    ? Math.abs(updatedAmount)
-                    : -Math.abs(updatedAmount);
-                const success = await updateTransaction(editingTx.id, {
-                  merchant: editForm.merchant,
-                  category: editForm.category,
-                  amount: finalAmount,
-                });
-                if (success) {
-                  showToast("Transaksi berhasil diupdate!", "success");
-                  setEditingTx(null);
-                } else {
-                  showToast("Gagal mengupdate transaksi!", "error");
-                }
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Merchant
-                </label>
-                <input
-                  type="text"
-                  value={editForm.merchant}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, merchant: e.target.value })
-                  }
-                  className="w-full mt-1 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Category
-                </label>
-                <select
-                  value={editForm.category}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, category: e.target.value })
-                  }
-                  className="w-full mt-1 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
-                >
-                  <option>Food</option>
-                  <option>Transport</option>
-                  <option>Gaming</option>
-                  <option>Internet</option>
-                  <option>Subscription</option>
-                  <option>Shopping</option>
-                  <option>Salary</option>
-                  <option>Education</option>
-                  <option>Entertainment</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Amount
-                </label>
-                <input
-                  type="number"
-                  value={editForm.amount}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, amount: e.target.value })
-                  }
-                  className="w-full mt-1 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/20"
-                />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingTx(null)}
-                  className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 rounded-xl bg-[#8B5CF6] py-2.5 text-sm font-medium text-white hover:bg-violet-700"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Add Transaction Modal */}
+      <AnimatePresence>{isModalOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"><div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between mb-4"><h2 className="text-lg font-bold text-white">Add Transaction</h2><button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white"><X size={20} /></button></div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input type="text" value={form.merchant} onChange={(e) => setForm({ ...form, merchant: e.target.value })} placeholder="Merchant" className="w-full rounded-xl bg-slate-800/50 border border-slate-700 px-4 py-2.5 text-white placeholder:text-slate-500 focus:border-emerald-500" required />
+          <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="w-full rounded-xl bg-slate-800/50 border border-slate-700 px-4 py-2.5 text-white focus:border-emerald-500"><option>Food</option><option>Transport</option><option>Gaming</option><option>Internet</option><option>Subscription</option><option>Shopping</option><option>Salary</option><option>Education</option><option>Entertainment</option></select>
+          <input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="Amount" className="w-full rounded-xl bg-slate-800/50 border border-slate-700 px-4 py-2.5 text-white placeholder:text-slate-500 focus:border-emerald-500" required />
+          <div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => setForm({ ...form, type: "expense" })} className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${form.type === "expense" ? "bg-emerald-500 text-white" : "bg-slate-800 text-slate-400"}`}>Expense</button><button type="button" onClick={() => setForm({ ...form, type: "income" })} className={`rounded-xl px-4 py-2 text-sm font-medium transition-all ${form.type === "income" ? "bg-emerald-500 text-white" : "bg-slate-800 text-slate-400"}`}>Income</button></div>
+          <div className="flex gap-3 pt-2"><button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 rounded-xl border border-slate-700 py-2.5 text-sm font-medium text-slate-400 hover:bg-slate-800">Cancel</button><button type="submit" className="flex-1 rounded-xl bg-emerald-500 py-2.5 text-sm font-medium text-white hover:bg-emerald-600">Save</button></div>
+        </form>
+      </div></div>)}</AnimatePresence>
     </div>
   );
 }

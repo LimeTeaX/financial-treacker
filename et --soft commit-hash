@@ -1,0 +1,36 @@
+[33ma93052c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m refactor: complete UI redesign to Emerald/Glassmorphism theme
+[33mbd65084[m fix
+[33mf9f2933[m feat: responsive sidebar with hamburger menu & limit login history to 4 items
+[33me9fbedc[m adding logout components
+[33mbc02759[m update location
+[33m0f99c1f[m update investment
+[33mf8c469b[m refactor: migrate from localStorage to Supabase as single source of truth
+[33mbd3b86a[m adding google login auth
+[33m472d69b[m feat: add landing page with theme sync from Supabase
+[33ma1b4ad4[m feat(settings): custom PIN modal replaces browser prompt
+[33m89161a8[m feat: logout function in sidebar and profile page
+[33mccd0365[m feat: currency IDR/USD support, chart analytics fix, 2FA setup, logout function, dark mode CSS fix
+[33m22cddac[m fix: localStorage cleanup, profile sync from Supabase, enable all RLS policies
+[33m13e48ff[m fate:auth login
+[33mbf0f059[m refactor: massage to recurring
+[33me964597[m feat: dark mode, realtime settings, payment badge, export CSV, activity charts
+[33m471bd61[m update profile ketinggalan
+[33me55215a[m update profile
+[33me5f03a5[m update activity
+[33m865e087[m trigger redeploy
+[33mb1f39aa[m fixing yang ke 1
+[33mc8c18c2[m update fix
+[33md58be2e[m update
+[33m5163835[m add notification after adding transaction
+[33m4ab22b1[m fix some issue
+[33m412ac20[m adding sheet for database, and fix some bugs
+[33m5170425[m update some feature
+[33m777cb3a[m  updated features for the dashboard, by adding add transactions
+[33mb045c25[m Add Settings and fix some many bugs
+[33m4437844[m  Minor Update
+[33mfebb3a4[m Adding profile page
+[33m5769009[m Adding page Activity, and fix some issues with the sidebar
+[33mfe14d8b[m Adding page messages, analytics, transactions, and payment. also fix some bug and optimazion web with using single page application
+[33ma7f3fb0[m fixing bug
+[33mb570246[m Massage Page Fix
+[33m0e2555b[m Dashboard Page Added

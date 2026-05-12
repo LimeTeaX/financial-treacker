@@ -17,22 +17,39 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
-import { filterByPeriod } from "../utils/helpers";
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
+// Helper: filter by period
+const filterByPeriod = (transactions, period) => {
+  const now = new Date();
+  let startDate = new Date();
+  switch (period) {
+    case "Week": startDate.setDate(now.getDate() - 7); break;
+    case "Month": startDate.setMonth(now.getMonth() - 1); break;
+    case "3 Months": startDate.setMonth(now.getMonth() - 3); break;
+    default: startDate = new Date(0);
+  }
+  return transactions.filter((tx) => tx.date && new Date(tx.date) >= startDate);
+};
 
 function getHeatmapColor(intensity) {
   switch (intensity) {
-    case 0:
-      return "bg-slate-100";
-    case 1:
-      return "bg-violet-200";
-    case 2:
-      return "bg-violet-300";
-    case 3:
-      return "bg-[#8B5CF6]";
-    case 4:
-      return "bg-violet-800";
-    default:
-      return "bg-slate-100";
+    case 0: return "bg-slate-800/50";
+    case 1: return "bg-emerald-500/20";
+    case 2: return "bg-emerald-500/30";
+    case 3: return "bg-emerald-500/50";
+    case 4: return "bg-emerald-500";
+    default: return "bg-slate-800/50";
   }
 }
 
@@ -53,41 +70,29 @@ function ActivityHeatmap({ transactions }) {
   }, [transactions]);
 
   const weeks = [];
-  for (let w = 0; w < 12; w++)
-    weeks.push(heatmapData.slice(w * 7, (w + 1) * 7));
+  for (let w = 0; w < 12; w++) weeks.push(heatmapData.slice(w * 7, (w + 1) * 7));
 
   return (
     <div className="overflow-x-auto">
       <div className="flex gap-1 min-w-[600px]">
         <div className="flex flex-col gap-1 mr-2 pt-5">
           {["", "Mon", "", "Wed", "", "Fri", ""].map((label, i) => (
-            <div
-              key={i}
-              className="h-4 text-[9px] text-slate-300 flex items-center"
-            >
-              {label}
-            </div>
+            <div key={i} className="h-4 text-[9px] text-slate-500 flex items-center">{label}</div>
           ))}
         </div>
         <div className="flex gap-1">
           {weeks.map((week, wi) => (
             <div key={wi} className="flex flex-col gap-1">
               {week.map((day, di) => (
-                <div
-                  key={di}
-                  className={`h-4 w-4 rounded-sm ${getHeatmapColor(day.intensity)}`}
-                  title={`${day.date}: ${day.intensity} transactions`}
-                />
+                <div key={di} className={`h-4 w-4 rounded-sm ${getHeatmapColor(day.intensity)}`} title={`${day.date}: ${day.intensity} transactions`} />
               ))}
             </div>
           ))}
         </div>
       </div>
-      <div className="flex items-center gap-2 mt-3 text-[10px] text-slate-400">
+      <div className="flex items-center gap-2 mt-3 text-[10px] text-slate-500">
         <span>Less</span>
-        {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} className={`h-3 w-3 rounded-sm ${getHeatmapColor(i)}`} />
-        ))}
+        {[0, 1, 2, 3, 4].map((i) => <div key={i} className={`h-3 w-3 rounded-sm ${getHeatmapColor(i)}`} />)}
         <span>More</span>
       </div>
     </div>
@@ -100,21 +105,10 @@ function PeakHoursChart({ data }) {
     <div className="relative h-40">
       <div className="absolute left-0 bottom-0 right-0 flex items-end justify-between gap-1 px-4">
         {data.map((peak) => (
-          <div
-            key={peak.hour}
-            className="flex-1 flex flex-col items-center gap-2"
-          >
-            <span className="text-[10px] text-slate-500 font-medium">
-              {peak.value}tx
-            </span>
-            <div
-              className="w-full rounded-t-lg bg-[#8B5CF6]"
-              style={{
-                height: `${(peak.value / maxVal) * 120}px`,
-                minWidth: "20px",
-              }}
-            />
-            <span className="text-[9px] text-slate-400">{peak.hour}</span>
+          <div key={peak.hour} className="flex-1 flex flex-col items-center gap-2">
+            <span className="text-[10px] text-slate-400 font-medium">{peak.value}tx</span>
+            <div className="w-full rounded-t-lg bg-emerald-500" style={{ height: `${(peak.value / maxVal) * 120}px`, minWidth: "20px" }} />
+            <span className="text-[9px] text-slate-500">{peak.hour}</span>
           </div>
         ))}
       </div>
@@ -123,104 +117,28 @@ function PeakHoursChart({ data }) {
 }
 
 function WeeklyCashFlowChart({ data }) {
-  const width = 600;
-  const height = 180;
-  const pad = { top: 20, right: 30, bottom: 20, left: 10 };
-  const cw = width - pad.left - pad.right;
-  const ch = height - pad.top - pad.bottom;
-  const maxVal = Math.max(...data.map((d) => Math.max(d.income, d.expense)), 1);
-  const stepX = cw / (data.length - 1);
-
-  const incomePoints = data.map((d, i) => ({
-    x: pad.left + i * stepX,
-    y: pad.top + ch - (d.income / maxVal) * ch,
-  }));
-  const expensePoints = data.map((d, i) => ({
-    x: pad.left + i * stepX,
-    y: pad.top + ch - (d.expense / maxVal) * ch,
-  }));
-  const incomeLine = incomePoints.map((p) => `${p.x},${p.y}`).join(" ");
-  const expenseLine = expensePoints.map((p) => `${p.x},${p.y}`).join(" ");
-  const incomeArea = `${incomePoints[0].x},${pad.top + ch} ${incomeLine} ${incomePoints[incomePoints.length - 1].x},${pad.top + ch}`;
-
   return (
-    <div className="overflow-x-auto">
-      <svg
-        width={width}
-        height={height}
-        viewBox={`0 0 ${width} ${height}`}
-        className="min-w-[500px] w-full"
-      >
-        {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => (
-          <line
-            key={i}
-            x1={pad.left}
-            y1={pad.top + ch * (1 - pct)}
-            x2={pad.left + cw}
-            y2={pad.top + ch * (1 - pct)}
-            stroke="#f1f5f9"
-            strokeWidth="1"
-          />
-        ))}
-        <polygon
-          points={incomeArea}
-          fill="url(#incomeGradient)"
-          opacity="0.3"
-        />
-        <polyline
-          points={expenseLine}
-          fill="none"
-          stroke="#F97316"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeDasharray="6 3"
-        />
-        <polyline
-          points={incomeLine}
-          fill="none"
-          stroke="#8B5CF6"
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
-        {incomePoints.map((p, i) => (
-          <circle
-            key={`inc-${i}`}
-            cx={p.x}
-            cy={p.y}
-            r="4"
-            fill="#8B5CF6"
-            stroke="white"
-            strokeWidth="2"
-          />
-        ))}
-        {data.map((d, i) => (
-          <text
-            key={d.day}
-            x={pad.left + i * stepX}
-            y={height - 5}
-            textAnchor="middle"
-            className="fill-slate-400 text-[10px]"
-          >
-            {d.day}
-          </text>
-        ))}
-        <defs>
-          <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-      </svg>
-      <div className="flex items-center gap-4 mt-2">
-        <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
-          <span className="w-3 h-0.5 rounded-full bg-[#8B5CF6] inline-block" />{" "}
-          Income
-        </span>
-        <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
-          <span className="w-3 h-0.5 rounded-full bg-orange-400 inline-block border-dashed" />{" "}
-          Expenses
-        </span>
-      </div>
+    <div className="h-72 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data}>
+          <defs>
+            <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+          <XAxis dataKey="label" stroke="#64748b" fontSize={12} tickLine={false} />
+          <YAxis stroke="#64748b" fontSize={12} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+          <Tooltip contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #334155", borderRadius: "12px" }} labelStyle={{ color: "#f1f5f9", fontWeight: 600 }} formatter={(v) => [`Rp ${v.toLocaleString()}`, ""]} />
+          <Area type="monotone" dataKey="income" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorIncome)" />
+          <Area type="monotone" dataKey="expense" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorExpense)" />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }
@@ -228,6 +146,7 @@ function WeeklyCashFlowChart({ data }) {
 export default function ActivityPage() {
   const { transactions, settings } = useAppContext();
   const [timeFilter, setTimeFilter] = useState("3 Months");
+
   const symbol = settings?.currency === "USD" ? "$" : "Rp";
   const locale = settings?.currency === "USD" ? "en-US" : "id-ID";
 
@@ -236,392 +155,178 @@ export default function ActivityPage() {
     return filterByPeriod(transactions, timeFilter);
   }, [transactions, timeFilter]);
 
+  // Peak hours
   const peakHours = useMemo(() => {
     const hours = Array(24).fill(0);
-    filteredTxns.forEach((tx) => {
-      if (tx.date) {
-        const hour =
-          new Date(tx.date + "T00:00:00").getHours() ||
-          new Date(tx.date).getHours();
-        hours[hour]++;
-      }
-    });
+    filteredTxns.forEach((tx) => { if (tx.date) hours[new Date(tx.date).getHours()]++; });
     return [
-      { hour: "6AM", value: hours[6] },
-      { hour: "8AM", value: hours[8] },
-      { hour: "10AM", value: hours[10] },
-      { hour: "12PM", value: hours[12] },
-      { hour: "2PM", value: hours[14] },
-      { hour: "4PM", value: hours[16] },
-      { hour: "6PM", value: hours[18] },
-      { hour: "8PM", value: hours[20] },
-      { hour: "10PM", value: hours[22] },
+      { hour: "6AM", value: hours[6] }, { hour: "8AM", value: hours[8] }, { hour: "10AM", value: hours[10] },
+      { hour: "12PM", value: hours[12] }, { hour: "2PM", value: hours[14] }, { hour: "4PM", value: hours[16] },
+      { hour: "6PM", value: hours[18] }, { hour: "8PM", value: hours[20] }, { hour: "10PM", value: hours[22] },
     ];
   }, [filteredTxns]);
 
-  const mostActiveHour = useMemo(() => {
-    if (!filteredTxns || filteredTxns.length === 0)
-      return { hour: "N/A", label: "No data yet" };
-    const hourCounts = {},
-      hourLabels = {
-        6: "🌅 Morning coffee",
-        8: "🌅 Morning rush",
-        10: "☀️ Brunch time",
-        12: "🍜 Lunch time",
-        14: "☀️ Afternoon",
-        16: "🌤️ Evening",
-        18: "🌙 Dinner time",
-        20: "🎮 Gaming time",
-        22: "🌙 Late night",
-      };
-    filteredTxns.forEach((tx) => {
-      if (tx.date) {
-        const hour =
-          new Date(tx.date + "T00:00:00").getHours() ||
-          new Date(tx.date).getHours();
-        hourCounts[hour] = (hourCounts[hour] || 0) + 1;
-      }
-    });
-    const peakHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
-    return peakHour
-      ? {
-          hour: `${peakHour[0]}:00`,
-          label: hourLabels[peakHour[0]] || "Active time",
-        }
-      : { hour: "N/A", label: "No data yet" };
-  }, [filteredTxns]);
-
+  // Weekly cash flow
   const weeklyCashflow = useMemo(() => {
-    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-      now = new Date(),
-      result = [];
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const now = new Date();
+    const result = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
       const ds = d.toISOString().split("T")[0];
       const dayTxns = filteredTxns.filter((t) => t.date?.startsWith(ds));
       result.push({
-        day: days[d.getDay()],
-        date: ds,
-        income: dayTxns
-          .filter((t) => t.type === "income")
-          .reduce((s, t) => s + Math.abs(t.amount || 0), 0),
-        expense: dayTxns
-          .filter((t) => t.type === "expense")
-          .reduce((s, t) => s + Math.abs(t.amount || 0), 0),
+        label: days[d.getDay()],
+        income: dayTxns.filter((t) => t.type === "income").reduce((s, t) => s + Math.abs(t.amount || 0), 0),
+        expense: dayTxns.filter((t) => t.type === "expense").reduce((s, t) => s + Math.abs(t.amount || 0), 0),
       });
     }
     return result;
   }, [filteredTxns]);
 
+  // Most active hour
+  const mostActiveHour = useMemo(() => {
+    if (!filteredTxns || filteredTxns.length === 0) return { hour: "N/A", label: "No data yet" };
+    const hourCounts = {};
+    const hourLabels = { 6: "🌅 Morning coffee", 8: "🌅 Morning rush", 10: "☀️ Brunch time", 12: "🍜 Lunch time", 14: "☀️ Afternoon", 16: "🌤️ Evening", 18: "🌙 Dinner time", 20: "🎮 Gaming time", 22: "🌙 Late night" };
+    filteredTxns.forEach((tx) => { if (tx.date) hourCounts[new Date(tx.date).getHours()] = (hourCounts[new Date(tx.date).getHours()] || 0) + 1; });
+    const peakHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
+    return peakHour ? { hour: `${peakHour[0]}:00`, label: hourLabels[peakHour[0]] || "Active time" } : { hour: "N/A", label: "No data yet" };
+  }, [filteredTxns]);
+
+  // Category progress
   const categoryProgress = useMemo(() => {
     if (!filteredTxns || filteredTxns.length === 0) return [];
-    const now = new Date(),
-      thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`,
-      prevMonth = `${now.getFullYear()}-${String(now.getMonth()).padStart(2, "0")}`;
-    const categories = [
-      ...new Set(
-        filteredTxns.filter((t) => t.type === "expense").map((t) => t.category),
-      ),
-    ];
-    const icons = {
-      Food: Utensils,
-      "Food & Drink": Utensils,
-      Gaming: Gamepad2,
-      "Gaming/Top-up": Gamepad2,
-      Internet: Wifi,
-      Subscription: Zap,
-      Transport: Activity,
-      Shopping: ShoppingBag,
-    };
-    const colorMap = {
-      Food: "bg-orange-400",
-      "Food & Drink": "bg-orange-400",
-      Gaming: "bg-[#8B5CF6]",
-      "Gaming/Top-up": "bg-[#8B5CF6]",
-      Internet: "bg-blue-400",
-      Subscription: "bg-amber-400",
-      Transport: "bg-emerald-400",
-      Shopping: "bg-rose-400",
-      Entertainment: "bg-indigo-400",
-      Education: "bg-teal-400",
-      Utilities: "bg-slate-400",
-      Other: "bg-gray-400",
-    };
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const prevMonth = `${now.getFullYear()}-${String(now.getMonth()).padStart(2, "0")}`;
+    const categories = [...new Set(filteredTxns.filter((t) => t.type === "expense").map((t) => t.category))];
+    const icons = { Food: Utensils, Gaming: Gamepad2, Internet: Wifi, Subscription: Zap, Transport: Activity, Shopping: ShoppingBag };
+    const colorMap = { Food: "bg-orange-500", Gaming: "bg-emerald-500", Internet: "bg-blue-500", Subscription: "bg-amber-500", Transport: "bg-cyan-500", Shopping: "bg-rose-500", Entertainment: "bg-indigo-500", Education: "bg-teal-500" };
     return categories.map((cat) => {
-      const thisMonthTxns = filteredTxns.filter(
-        (t) => t.category === cat && t.date?.startsWith(thisMonth),
-      );
-      const prevMonthTxns = filteredTxns.filter(
-        (t) => t.category === cat && t.date?.startsWith(prevMonth),
-      );
-      const thisMonthAmount = thisMonthTxns.reduce(
-        (s, t) => s + Math.abs(t.amount || 0),
-        0,
-      );
-      const prevMonthAmount = prevMonthTxns.reduce(
-        (s, t) => s + Math.abs(t.amount || 0),
-        0,
-      );
+      const thisMonthTxns = filteredTxns.filter((t) => t.category === cat && t.date?.startsWith(thisMonth));
+      const prevMonthTxns = filteredTxns.filter((t) => t.category === cat && t.date?.startsWith(prevMonth));
+      const thisMonthAmount = thisMonthTxns.reduce((s, t) => s + Math.abs(t.amount || 0), 0);
+      const prevMonthAmount = prevMonthTxns.reduce((s, t) => s + Math.abs(t.amount || 0), 0);
       return {
-        id: cat,
-        category: cat,
-        icon: icons[cat] || Activity,
-        iconBg: "bg-slate-100 text-slate-600",
-        thisMonth: thisMonthAmount,
-        lastMonth: prevMonthAmount,
-        limit: Math.max(thisMonthAmount * 1.5, 500000),
-        color: colorMap[cat] || "bg-gray-400",
-        percent: Math.round(
-          (thisMonthAmount / Math.max(thisMonthAmount * 1.5, 500000)) * 100,
-        ),
-        change:
-          prevMonthAmount > 0
-            ? Math.round(
-                ((thisMonthAmount - prevMonthAmount) / prevMonthAmount) * 100,
-              )
-            : 0,
+        id: cat, category: cat, icon: icons[cat] || ShoppingBag, iconBg: "bg-slate-800 text-slate-400",
+        thisMonth: thisMonthAmount, limit: Math.max(thisMonthAmount * 1.5, 500000), color: colorMap[cat] || "bg-slate-500",
+        percent: Math.round((thisMonthAmount / Math.max(thisMonthAmount * 1.5, 500000)) * 100),
+        change: prevMonthAmount > 0 ? Math.round(((thisMonthAmount - prevMonthAmount) / prevMonthAmount) * 100) : 0,
       };
     });
   }, [filteredTxns]);
 
+  // Recent logs
   const recentLogs = useMemo(() => {
     if (!filteredTxns || filteredTxns.length === 0) return [];
-    const icons = {
-      Food: Utensils,
-      "Food & Drink": Utensils,
-      Gaming: Gamepad2,
-      "Gaming/Top-up": Gamepad2,
-      Internet: Wifi,
-      Subscription: Zap,
-      Transport: Activity,
-      Shopping: ShoppingBag,
-      Entertainment: Coffee,
-      Education: GraduationCap,
-      Utilities: Zap,
-      Salary: DollarSign,
-      Income: TrendingUp,
-    };
-    const colors = {
-      Food: "bg-orange-100 text-orange-600",
-      "Food & Drink": "bg-orange-100 text-orange-600",
-      Gaming: "bg-rose-100 text-rose-600",
-      "Gaming/Top-up": "bg-rose-100 text-rose-600",
-      Internet: "bg-indigo-100 text-indigo-600",
-      Subscription: "bg-violet-100 text-violet-600",
-      Transport: "bg-slate-100 text-slate-600",
-      Shopping: "bg-pink-100 text-pink-600",
-      Entertainment: "bg-amber-100 text-amber-600",
-      Education: "bg-teal-100 text-teal-600",
-      Utilities: "bg-blue-100 text-blue-600",
-      Salary: "bg-emerald-100 text-emerald-600",
-      Income: "bg-emerald-100 text-emerald-600",
-      Other: "bg-gray-100 text-gray-600",
-    };
+    const icons = { Food: Utensils, Gaming: Gamepad2, Internet: Wifi, Subscription: Zap, Transport: Activity, Shopping: ShoppingBag, Entertainment: Coffee, Education: GraduationCap, Salary: DollarSign, Income: TrendingUp };
+    const colors = { Food: "bg-orange-500/10 text-orange-400", Gaming: "bg-emerald-500/10 text-emerald-400", Internet: "bg-blue-500/10 text-blue-400", Shopping: "bg-rose-500/10 text-rose-400", Entertainment: "bg-amber-500/10 text-amber-400" };
     const getTimeAgo = (dateStr) => {
       if (!dateStr) return "Unknown";
-      const d = new Date(dateStr),
-        n = new Date(),
-        ms = n - d,
-        mins = Math.floor(ms / 60000),
-        hrs = Math.floor(ms / 3600000),
-        days = Math.floor(ms / 86400000);
+      const d = new Date(dateStr), n = new Date(), ms = n - d, mins = Math.floor(ms / 60000), hrs = Math.floor(ms / 3600000), days = Math.floor(ms / 86400000);
       if (mins < 1) return "Just now";
       if (mins < 60) return `${mins} min ago`;
       if (hrs < 24) return `${hrs}h ago`;
       if (days < 7) return `${days}d ago`;
       return d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
     };
-    return [...filteredTxns]
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 10)
-      .map((tx) => ({
-        id: tx.id,
-        action:
-          tx.type === "income"
-            ? `Received ${tx.merchant}`
-            : `Paid ${tx.merchant}`,
-        type: tx.type,
-        amount: tx.amount,
-        time: getTimeAgo(tx.date),
-        icon: icons[tx.category] || Activity,
-        iconBg: colors[tx.category] || colors["Other"],
-      }));
+    return [...filteredTxns].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10).map((tx) => ({
+      id: tx.id, action: tx.type === "income" ? `Received ${tx.merchant}` : `Paid ${tx.merchant}`, amount: tx.amount,
+      time: getTimeAgo(tx.date), icon: icons[tx.category] || Activity, iconBg: colors[tx.category] || "bg-slate-800 text-slate-400",
+    }));
   }, [filteredTxns]);
 
+  if (transactions.length === 0) {
+    return <div className="flex justify-center py-20"><p className="text-slate-400">No transaction data available</p></div>;
+  }
+
   return (
-    <div className="h-[calc(100vh-2.5rem)] flex flex-col gap-5">
-      <main className="flex-1 overflow-y-auto flex flex-col gap-5">
-        <header className="flex items-center justify-between rounded-3xl bg-white px-7 py-5 border border-slate-100 shadow-sm shrink-0">
-          <div>
-            <p className="text-sm text-slate-400 font-medium">Account</p>
-            <h1 className="mt-0.5 text-2xl font-bold text-slate-900 tracking-tight">
-              Activity
-            </h1>
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Activity</h1>
+          <p className="text-slate-400 mt-1">Track your financial behavior and patterns</p>
+        </div>
+        <div className="flex items-center gap-2 rounded-xl bg-slate-800/30 p-1 border border-slate-700">
+          {["Week", "Month", "3 Months"].map((opt) => (
+            <button key={opt} onClick={() => setTimeFilter(opt)} className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-all duration-200 ${timeFilter === opt ? "bg-emerald-500 text-white shadow-sm" : "text-slate-400 hover:text-white"}`}>
+              {opt}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Activity Heatmap */}
+      <div className="rounded-xl bg-slate-900/50 border border-slate-800 p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400"><Calendar size={18} /></div>
+          <div><p className="text-sm font-semibold text-white">Financial Activity</p><p className="text-xs text-slate-400">Transaction intensity over time</p></div>
+        </div>
+        <ActivityHeatmap transactions={filteredTxns} />
+      </div>
+
+      {/* Charts Row */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-xl bg-slate-900/50 border border-slate-800 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400"><Clock size={18} /></div>
+            <div><p className="text-sm font-semibold text-white">Peak Spending Hours</p><p className="text-xs text-slate-400">When you spend the most</p></div>
           </div>
-          <div className="flex items-center gap-2 rounded-2xl bg-slate-50 p-1 border border-slate-100">
-            {["Week", "Month", "3 Months"].map((opt) => (
-              <button
-                key={opt}
-                onClick={() => setTimeFilter(opt)}
-                className={`rounded-xl px-4 py-1.5 text-xs font-semibold transition-all duration-200 ${timeFilter === opt ? "bg-white text-slate-800 shadow-sm border border-slate-100" : "text-slate-400 hover:text-slate-600"}`}
-              >
-                {opt}
-              </button>
+          <PeakHoursChart data={peakHours} />
+          <p className="mt-3 text-xs text-slate-400 text-center">🕗 Most active: <span className="font-semibold text-emerald-400">{mostActiveHour.hour} ({mostActiveHour.label})</span></p>
+        </div>
+
+        <div className="rounded-xl bg-slate-900/50 border border-slate-800 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400"><TrendingUp size={18} /></div>
+            <div><p className="text-sm font-semibold text-white">Weekly Cash Flow</p><p className="text-xs text-slate-400">Income vs Expenses this week</p></div>
+          </div>
+          <WeeklyCashFlowChart data={weeklyCashflow} />
+          <div className="flex items-center justify-center gap-6 mt-4">
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-xs text-slate-400">Income</span></div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-500" /><span className="text-xs text-slate-400">Expense</span></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Grid */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Category Progress */}
+        <div className="rounded-xl bg-slate-900/50 border border-slate-800 p-5">
+          <p className="text-sm font-medium text-slate-400 mb-4">Category Progress</p>
+          <div className="space-y-4">
+            {categoryProgress.length === 0 ? <div className="text-center py-8 text-slate-500">No category data</div> : categoryProgress.map((cat) => {
+              const isIncrease = cat.change > 0;
+              return (
+                <div key={cat.id}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2"><div className={`p-1.5 rounded-lg ${cat.iconBg}`}><cat.icon size={12} /></div><span className="text-sm font-medium text-white">{cat.category}</span></div>
+                    <div className="flex items-center gap-2"><span className="text-xs text-slate-400">{symbol} {(cat.thisMonth / 1000).toFixed(0)}k / {symbol} {(cat.limit / 1000).toFixed(0)}k</span>
+                    {cat.change !== 0 && <span className={`flex items-center gap-0.5 text-[10px] font-semibold ${isIncrease ? "text-red-400" : "text-emerald-400"}`}>{isIncrease ? <ChevronUp size={10} /> : <ChevronDown size={10} />}{Math.abs(cat.change)}%</span>}</div>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden"><div className={`h-full rounded-full ${cat.color} transition-all`} style={{ width: `${Math.min(cat.percent, 100)}%` }} /></div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Recent Logs */}
+        <div className="rounded-xl bg-slate-900/50 border border-slate-800 p-5">
+          <p className="text-sm font-medium text-slate-400 mb-4">Recent Logs</p>
+          <div className="space-y-2">
+            {recentLogs.length === 0 ? <div className="text-center py-8 text-slate-500">No recent activity</div> : recentLogs.map((log) => (
+              <div key={log.id} className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-800/30 transition-colors">
+                <div className="flex items-center gap-3"><div className={`p-1.5 rounded-lg ${log.iconBg}`}><log.icon size={12} /></div><div><p className="text-sm font-medium text-white">{log.action}</p><p className="text-[10px] text-slate-500">{log.time}</p></div></div>
+                <span className={`text-sm font-semibold ${log.amount >= 0 ? "text-emerald-400" : "text-white"}`}>{log.amount >= 0 ? "+" : ""}{symbol} {Math.abs(log.amount || 0).toLocaleString(locale)}</span>
+              </div>
             ))}
           </div>
-        </header>
-
-        <section className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-[#8B5CF6]">
-              <Calendar size={18} />
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-slate-800">
-                Financial Activity
-              </p>
-              <p className="text-xs text-slate-400">
-                Transaction intensity over time
-              </p>
-            </div>
-          </div>
-          <ActivityHeatmap transactions={filteredTxns} />
-        </section>
-
-        <section className="grid gap-5 xl:grid-cols-2">
-          <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-orange-100 text-orange-500">
-                <Clock size={18} />
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-slate-800">
-                  Peak Spending Hours
-                </p>
-                <p className="text-xs text-slate-400">
-                  When you spend the most
-                </p>
-              </div>
-            </div>
-            <PeakHoursChart data={peakHours} />
-            <p className="mt-3 text-xs text-slate-400 text-center">
-              🕗 Most active:{" "}
-              <span className="font-semibold text-[#8B5CF6]">
-                {mostActiveHour.hour} ({mostActiveHour.label})
-              </span>
-            </p>
-          </article>
-          <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-500">
-                <TrendingUp size={18} />
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-slate-800">
-                  Weekly Cash Flow
-                </p>
-                <p className="text-xs text-slate-400">
-                  Income vs Expenses this week
-                </p>
-              </div>
-            </div>
-            <WeeklyCashFlowChart data={weeklyCashflow} />
-          </article>
-        </section>
-
-        <section className="grid gap-5 xl:grid-cols-[1fr_1fr]">
-          <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
-            <p className="text-sm font-medium text-slate-400 mb-4">
-              Category Progress
-            </p>
-            <div className="space-y-4">
-              {categoryProgress.map((cat) => {
-                const isIncrease = cat.change > 0;
-                return (
-                  <div key={cat.id}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`inline-flex h-7 w-7 items-center justify-center rounded-lg ${cat.iconBg}`}
-                        >
-                          <cat.icon size={14} />
-                        </span>
-                        <span className="text-sm font-medium text-slate-700">
-                          {cat.category}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-400">
-                          {symbol} {(cat.thisMonth / 1000).toFixed(0)}k /{" "}
-                          {symbol} {(cat.limit / 1000).toFixed(0)}k
-                        </span>
-                        {cat.change !== 0 && (
-                          <span
-                            className={`flex items-center gap-0.5 text-[10px] font-semibold ${isIncrease ? "text-rose-500" : "text-emerald-500"}`}
-                          >
-                            {isIncrease ? (
-                              <ChevronUp size={10} />
-                            ) : (
-                              <ChevronDown size={10} />
-                            )}
-                            {Math.abs(cat.change)}%
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${cat.color} transition-all`}
-                        style={{ width: `${Math.min(cat.percent, 100)}%` }}
-                      />
-                    </div>
-                    {cat.change !== 0 && (
-                      <p className="mt-1 text-[10px] text-slate-400">
-                        {isIncrease ? "Spent" : "Saved"} {Math.abs(cat.change)}%{" "}
-                        {isIncrease ? "more" : "less"} than last month
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </article>
-          <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
-            <p className="text-sm font-medium text-slate-400 mb-4">
-              Recent Logs
-            </p>
-            <div className="space-y-2">
-              {recentLogs.map((log) => (
-                <div
-                  key={log.id}
-                  className="flex items-center justify-between py-2.5 px-3 rounded-2xl hover:bg-slate-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`inline-flex h-8 w-8 items-center justify-center rounded-xl ${log.iconBg}`}
-                    >
-                      <log.icon size={14} />
-                    </span>
-                    <div>
-                      <p className="text-sm font-medium text-slate-800">
-                        {log.action}
-                      </p>
-                      <p className="text-[10px] text-slate-400">{log.time}</p>
-                    </div>
-                  </div>
-                  <span
-                    className={`text-sm font-semibold ${log.amount >= 0 ? "text-emerald-500" : "text-slate-700"}`}
-                  >
-                    {log.amount >= 0 ? "+" : ""}
-                    {symbol} {Math.abs(log.amount || 0).toLocaleString(locale)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </article>
-        </section>
-      </main>
+        </div>
+      </div>
     </div>
   );
 }

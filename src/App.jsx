@@ -1,4 +1,5 @@
-import { useState } from 'react'
+// src/App.jsx
+import { useState, useRef, useEffect } from 'react'
 import Sidebar from './components/Sidebar'
 import Dashboard from './Dashboard'
 import RecurringPage from './pages/RecurringPage'
@@ -17,27 +18,44 @@ function App() {
   const { user } = useAuth()
   const [currentPage, setCurrentPage] = useState('Dashboard')
   const [showAuth, setShowAuth] = useState(null)
+  const scrollPositions = useRef({})
+
+  const handleNavigate = (page) => {
+    // Simpan posisi scroll halaman lama
+    scrollPositions.current[currentPage] = window.scrollY
+    // Pindah ke halaman baru
+    setCurrentPage(page)
+  }
+
+  useEffect(() => {
+    // Restore posisi scroll halaman baru
+    const savedPosition = scrollPositions.current[currentPage]
+    if (savedPosition !== undefined) {
+      window.scrollTo(0, savedPosition)
+    } else {
+      window.scrollTo(0, 0)
+    }
+  }, [currentPage])
 
   if (user) {
     return (
-  <div className="min-h-screen bg-[#F8FAFC] text-slate-900">
-    <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-    {/* 🔥 TAMBAHIN PADDING TOP BUAT MOBILE, SERTA MARGIN LEFT BUAT DESKTOP */}
-    <main className="lg:ml-[260px] pt-16 lg:pt-5 p-4 lg:p-5 min-h-screen">
-      <div key={currentPage} className="animate-fadeIn">
-        {currentPage === "Dashboard" && <Dashboard />}
-        {currentPage === "Message" && <RecurringPage />}
-        {currentPage === "Analytics" && <Analytics />}
-        {currentPage === "Transaction" && <TransactionPage />}
-        {currentPage === "Payment" && <PaymentPage />}
-        {currentPage === "Activity" && <ActivityPage />}
-        {currentPage === "Profile" && <ProfilePage />}
-        {currentPage === "Setting" && <SettingPage />}
-        {currentPage === "Admin" && <AdminPage />}
+      <div className="min-h-screen bg-slate-950 text-white">
+        <Sidebar currentPage={currentPage} onNavigate={handleNavigate} />
+        <main className="lg:ml-[260px] pt-16 lg:pt-5 p-4 lg:p-5 min-h-screen">
+          <div key={currentPage} className="animate-fadeIn">
+            {currentPage === "Dashboard" && <Dashboard onNavigate={setCurrentPage} />}
+            {currentPage === "Message" && <RecurringPage />}
+            {currentPage === "Analytics" && <Analytics />}
+            {currentPage === "Transaction" && <TransactionPage />}
+            {currentPage === "Payment" && <PaymentPage />}
+            {currentPage === "Activity" && <ActivityPage />}
+            {currentPage === "Profile" && <ProfilePage />}
+            {currentPage === "Setting" && <SettingPage />}
+            {currentPage === "Admin" && <AdminPage />}
+          </div>
+        </main>
       </div>
-    </main>
-  </div>
-)
+    )
   }
 
   if (showAuth) {
