@@ -265,7 +265,7 @@ export default function Dashboard() {
     const now = new Date();
     const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
     const currentYear = now.getFullYear();
-    const symbol = settings?.currency === "USD" ? "$" : "Rp"; // 🔥 Currency support
+    const symbol = settings?.currency === "USD" ? "$" : "Rp";
 
     const thisMonthTxns = transactions.filter((t) => {
       if (!t.date) return false;
@@ -282,26 +282,21 @@ export default function Dashboard() {
     const balance = monthlyIncome - monthlyExpenses;
     const txnCount = thisMonthTxns.filter((t) => t.type === "expense").length;
 
+    // 🔥 Hitung bunga Seabank (2.5% per tahun = 0.025)
+    const yearlyInterest = Math.max(0, balance) * 0.025;
+    const dailyInterest = yearlyInterest / 365;
+
     return [
       {
         label: "Balance",
-        value: `${symbol} ${balance.toLocaleString(settings?.currency === "USD" ? "en-US" : "id-ID")}`, // 🔥 Currency
-        change:
-          monthlyIncome > 0
-            ? `${((balance / monthlyIncome) * 100).toFixed(1)}%`
-            : "0%",
+        value: `${symbol} ${balance.toLocaleString(settings?.currency === "USD" ? "en-US" : "id-ID")}`,
+        change: monthlyIncome > 0 ? `${((balance / monthlyIncome) * 100).toFixed(1)}%` : "0%",
         positive: balance >= 0,
         sub: "savings rate this month",
         color: "bg-violet-100",
         iconColor: "text-violet-500",
         icon: (
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            className="w-5 h-5"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+          <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10" />
             <path d="M12 6v6l4 2" />
           </svg>
@@ -309,48 +304,38 @@ export default function Dashboard() {
       },
       {
         label: "Spending",
-        value: `${symbol} ${monthlyExpenses.toLocaleString(settings?.currency === "USD" ? "en-US" : "id-ID")}`, // 🔥 Currency
+        value: `${symbol} ${monthlyExpenses.toLocaleString(settings?.currency === "USD" ? "en-US" : "id-ID")}`,
         change: `${txnCount} txns`,
         positive: false,
         sub: "this month",
         color: "bg-rose-100",
         iconColor: "text-rose-400",
         icon: (
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            className="w-5 h-5"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+          <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
             <path d="M12 6v6l4 2" />
           </svg>
         ),
       },
       {
-        label: "Investment",
-        value: `${symbol} ${Math.max(0, balance * 0.3).toLocaleString(settings?.currency === "USD" ? "en-US" : "id-ID")}`, // 🔥 Currency
-        change: "30% of balance",
+        label: "Seabank Savings",
+        value: `${symbol} ${Math.max(0, balance).toLocaleString(settings?.currency === "USD" ? "en-US" : "id-ID")}`,
+        change: `+${symbol} ${dailyInterest.toLocaleString(settings?.currency === "USD" ? "en-US" : "id-ID")}/day`,
         positive: true,
-        sub: "suggested monthly investment",
-        color: "bg-amber-100",
-        iconColor: "text-amber-500",
+        sub: "2.5% p.a. (daily payout)",
+        color: "bg-blue-100",
+        iconColor: "text-blue-500",
         icon: (
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            className="w-5 h-5"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-            <polyline points="16 7 22 7 22 13" />
+          <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth="2">
+            <rect x="2" y="6" width="20" height="12" rx="2" />
+            <path d="M12 10v4" />
+            <path d="M16 10v4" />
+            <path d="M8 10v4" />
           </svg>
         ),
       },
     ];
-  }, [transactions, settings]); // 🔥 Tambahin settings dependency
+  }, [transactions, settings]);
 
   // Handle submit Add Transaction
   const handleSubmit = async (e) => {
@@ -470,13 +455,12 @@ export default function Dashboard() {
                   </td>
                   <td className="py-3.5 pr-4">
                     <span
-                      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                        tx.status === "Completed"
+                      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${tx.status === "Completed"
                           ? "bg-emerald-50 text-emerald-600"
                           : tx.status === "Pending"
                             ? "bg-orange-50 text-orange-500"
                             : "bg-rose-50 text-rose-600"
-                      }`}
+                        }`}
                     >
                       {tx.status || "Completed"}
                     </span>
