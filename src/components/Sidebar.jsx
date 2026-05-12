@@ -183,7 +183,7 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
   return (
     <>
       {/* 🔥 DESKTOP SIDEBAR (fixed, selalu kelihatan di lg ke atas) */}
-      <aside className="fixed h-screen top-0 left-0 w-[260px] shrink-0 flex flex-col gap-6 rounded-3xl bg-white p-5 border border-slate-100 shadow-sm z-20 overflow-y-auto hidden lg:flex">
+      <aside className="fixed h-screen top-0 left-0 w-[260px] shrink-0 flex flex-col gap-6 rounded-3xl bg-white p-5 border border-slate-100 shadow-sm z-20 overflow-y-auto max-lg:hidden lg:block">
         <SidebarContent />
       </aside>
 
