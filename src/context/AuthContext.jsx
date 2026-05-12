@@ -1,17 +1,27 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, isDemoMode } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
+// Demo user for design preview
+const DEMO_USER = {
+  id: 'demo-user-id',
+  email: 'demo@example.com',
+  user_metadata: { full_name: 'Demo User' }
+}
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(isDemoMode ? DEMO_USER : null)
   const [role, setRole] = useState('user')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!isDemoMode)
   const [authError, setAuthError] = useState(null)
 
   useEffect(() => {
+    // Skip auth initialization in demo mode
+    if (isDemoMode) return
+
     let isMounted = true
 
     const syncSession = (nextSession) => {
@@ -49,7 +59,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    if (!user?.id) return
+    if (!user?.id || isDemoMode) return
 
     let isMounted = true
 
@@ -97,12 +107,14 @@ export function AuthProvider({ children }) {
   }, [user?.id])
 
   const signUp = async (email, password) => {
+    if (isDemoMode) return { data: null, error: { message: 'Demo mode - Supabase not connected' } }
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) setAuthError(error.message)
     return { data, error }
   }
 
   const signIn = async (email, password) => {
+    if (isDemoMode) return { data: null, error: { message: 'Demo mode - Supabase not connected' } }
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -112,6 +124,10 @@ export function AuthProvider({ children }) {
   }
 
   const signOut = async () => {
+    if (isDemoMode) {
+      setUser(null)
+      return { error: null }
+    }
     const { error } = await supabase.auth.signOut()
     if (error) {
       setAuthError(error.message)
@@ -126,6 +142,7 @@ export function AuthProvider({ children }) {
   }
 
   const signInWithGoogle = async () => {
+    if (isDemoMode) return { data: null, error: { message: 'Demo mode - Supabase not connected' } }
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -143,6 +160,7 @@ export function AuthProvider({ children }) {
       role,
       loading,
       authError,
+      isDemoMode,
       signUp,
       signIn,
       signOut,
@@ -153,7 +171,7 @@ export function AuthProvider({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+      <div className="min-h-screen bg-[#020617] flex items-center justify-center">
         <p className="text-slate-400">Checking session...</p>
       </div>
     )
