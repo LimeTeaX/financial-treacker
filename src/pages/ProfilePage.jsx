@@ -15,6 +15,8 @@ import {
   ToggleLeft,
   ToggleRight,
   X,
+  Crosshair,
+  Loader2
 } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { useAppContext } from '../context/AppContext'
@@ -121,6 +123,7 @@ export default function ProfilePage() {
   const [draftProfile, setDraftProfile] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
   const [isDownloadOpen, setIsDownloadOpen] = useState(false)
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false)
   const [toggles, setToggles] = useState({
     biometric: false,
     alerts: true,
@@ -230,6 +233,69 @@ export default function ProfilePage() {
     )
   }
 
+  const detectLocation = () => {
+    setIsDetectingLocation(true)
+
+    if (!navigator.geolocation) {
+      alert("Geolocation tidak didukung oleh browser kamu")
+      setIsDetectingLocation(false)
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords
+
+        try {
+          // Reverse geocoding pake API (OpenStreetMap gratis)
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`
+          )
+          const data = await response.json()
+
+          // Ambil kota/distrik
+          const city = data.address?.city ||
+            data.address?.town ||
+            data.address?.village ||
+            data.address?.county ||
+            "Unknown"
+
+          const state = data.address?.state || ""
+          const country = data.address?.country_code?.toUpperCase() || "ID"
+
+          let locationString = city
+          if (state) locationString += `, ${state}`
+          if (country) locationString += `, ${country}`
+
+          // Update profile dengan lokasi
+          await updateProfile({ location: locationString })
+
+          // Refresh profile dari context (otomatis karena Realtime)
+          setIsDetectingLocation(false)
+        } catch (error) {
+          console.error("Failed to get location name:", error)
+          alert("Gagal mengambil nama lokasi")
+          setIsDetectingLocation(false)
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error)
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            alert("Izin lokasi ditolak. Aktifkan manual di pengaturan browser.")
+            break
+          case error.POSITION_UNAVAILABLE:
+            alert("Lokasi tidak tersedia")
+            break
+          case error.TIMEOUT:
+            alert("Waktu permintaan lokasi habis")
+            break
+        }
+        setIsDetectingLocation(false)
+      }
+    )
+  }
+
   return (
     <div className="h-[calc(100vh-2.5rem)] flex flex-col gap-5">
       <main className="flex-1 overflow-y-auto flex flex-col gap-5">
@@ -294,13 +360,29 @@ export default function ProfilePage() {
                     <GraduationCap size={14} />
                     {profile.title || 'Dashboard user'}
                   </p>
-                  <div className="flex items-center gap-2 mt-3">
+                  <div className="flex items-center gap-2 mt-3 flex-wrap">
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-600">
                       <Calendar size={11} /> Member since {profile.memberSince || '-'}
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-[#8B5CF6]">
-                      <MapPin size={11} /> {profile.location || '-'}
-                    </span>
+
+                    <div className="flex items-center gap-1">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-[#8B5CF6]">
+                        <MapPin size={11} /> {profile.location || '-'}
+                      </span>
+
+                      <button
+                        onClick={detectLocation}
+                        disabled={isDetectingLocation}
+                        className="inline-flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 w-6 h-6 transition-colors disabled:opacity-50"
+                        title="Deteksi lokasi otomatis"
+                      >
+                        {isDetectingLocation ? (
+                          <Loader2 size={12} className="animate-spin text-slate-500" />
+                        ) : (
+                          <Crosshair size={12} className="text-slate-500" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -315,11 +397,10 @@ export default function ProfilePage() {
                   setIsEditing(true)
                 }
               }}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
-                isEditing
-                  ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-                  : 'bg-[#8B5CF6] text-white hover:bg-violet-700'
-              }`}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${isEditing
+                ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+                : 'bg-[#8B5CF6] text-white hover:bg-violet-700'
+                }`}
             >
               {isEditing ? <Save size={14} /> : <Edit3 size={14} />}
               {isEditing ? 'Save Profile' : 'Edit Profile'}
@@ -502,9 +583,8 @@ export default function ProfilePage() {
                     className="flex items-center gap-3 py-2.5 px-3 rounded-2xl hover:bg-slate-50 transition-colors"
                   >
                     <span
-                      className={`inline-flex h-2 w-2 rounded-full ${
-                        index === 0 ? 'bg-emerald-400 animate-pulse' : 'bg-slate-300'
-                      }`}
+                      className={`inline-flex h-2 w-2 rounded-full ${index === 0 ? 'bg-emerald-400 animate-pulse' : 'bg-slate-300'
+                        }`}
                     />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-slate-800">
