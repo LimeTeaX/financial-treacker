@@ -20,10 +20,9 @@ function App() {
 
   if (user) {
     return (
-  <div className="min-h-screen bg-[#F8FAFC] text-slate-900">
+  <div className="min-h-screen bg-[#020617] text-[#f8fafc]">
     <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
-    {/* 🔥 TAMBAHIN PADDING TOP BUAT MOBILE, SERTA MARGIN LEFT BUAT DESKTOP */}
-    <main className="lg:ml-[260px] pt-16 lg:pt-5 p-4 lg:p-5 min-h-screen">
+    <main className="lg:ml-[260px] pt-16 lg:pt-6 p-4 lg:p-6 min-h-screen">
       <div key={currentPage} className="animate-fadeIn">
         {currentPage === "Dashboard" && <Dashboard />}
         {currentPage === "Message" && <RecurringPage />}
