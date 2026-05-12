@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useAppContext } from "../context/AppContext";
+import ConfirmLogoutModal from './ConfirmLogoutModal';
+import { useState } from 'react'
 
 const NAV_ITEMS = [
   { id: "home", icon: Home, label: "Home", page: "Dashboard" },
@@ -64,6 +66,7 @@ function NavItem({ icon: Icon, label, active, badge, onClick }) {
 export default function Sidebar({ currentPage, setCurrentPage }) {
   const { user, role, signOut } = useAuth();
   const { profile, activeBillsCount } = useAppContext();
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
   const avatarUrl = profile?.avatar_url || null;
 
   const getActiveTab = () => {
@@ -80,6 +83,7 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
   const activeTab = getActiveTab();
 
   return (
+    <>
     <aside className="fixed h-screen top-0 left-0 w-[260px] shrink-0 flex flex-col gap-6 rounded-3xl bg-white p-5 border border-slate-100 shadow-sm z-20 overflow-y-auto">
       {/* Profile Header */}
       <div className="flex items-center gap-3 px-2 pt-1 pb-3 border-b border-slate-100 mb-2">
@@ -172,7 +176,7 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
             active={activeTab === item.id}
             onClick={async () => {
               if (item.id === "logout") {
-                await signOut();
+                setShowLogoutModal(true);
               } else if (item.page) {
                 setCurrentPage(item.page);
               }
@@ -181,5 +185,15 @@ export default function Sidebar({ currentPage, setCurrentPage }) {
         ))}
       </div>
     </aside>
+    <ConfirmLogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={async () => {
+          await signOut()
+          window.location.reload()
+        }}
+      />
+      </>
   );
+  
 }

@@ -22,6 +22,7 @@ import { QRCodeCanvas } from 'qrcode.react'
 import { useAppContext } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
+import ConfirmLogoutModal from '../components/ConfirmLogoutModal'
 
 function DownloadModal({ isOpen, onClose, transactions }) {
   if (!isOpen) return null
@@ -124,6 +125,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [isDownloadOpen, setIsDownloadOpen] = useState(false)
   const [isDetectingLocation, setIsDetectingLocation] = useState(false)
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [toggles, setToggles] = useState({
     biometric: false,
     alerts: true,
@@ -612,7 +614,7 @@ export default function ProfilePage() {
                 <Download size={16} /> Export Data
               </button>
               <button
-                onClick={signOut}
+                onClick={() => setShowLogoutModal(true)}
                 className="flex items-center justify-center gap-2 rounded-2xl bg-rose-50 border border-rose-100 px-4 py-3 text-sm font-medium text-rose-600 hover:bg-rose-100 transition-colors"
               >
                 <LogOut size={16} /> Log Out
@@ -657,6 +659,16 @@ export default function ProfilePage() {
         onClose={() => setIsDownloadOpen(false)}
         transactions={transactions}
       />
+
+      <ConfirmLogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={async () => {
+          await signOut()
+          window.location.reload()
+        }}
+      />
+
     </div>
   )
 }
