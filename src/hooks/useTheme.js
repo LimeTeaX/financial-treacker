@@ -1,21 +1,27 @@
+// src/hooks/useTheme.js
 import { useCallback, useEffect, useState } from 'react'
-import { applyTheme } from '../context/AppContext'
-import { useAppContext } from '../context/AppContext'
+import { useAppContext, applyTheme } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 
 export function useTheme() {
   const { user } = useAuth()
   const { settings, updateSettings, loading } = useAppContext()
   const [guestTheme, setGuestTheme] = useState('light')
+  const [isLoading, setIsLoading] = useState(true)
 
+  // Guest mode: ikutin system preference
   useEffect(() => {
-    if (user) return
+    if (user) {
+      setIsLoading(false)
+      return
+    }
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     const syncSystemTheme = () => {
       const nextTheme = mediaQuery.matches ? 'dark' : 'light'
       setGuestTheme(nextTheme)
       applyTheme(nextTheme)
+      setIsLoading(false)
     }
 
     syncSystemTheme()
@@ -23,7 +29,18 @@ export function useTheme() {
     return () => mediaQuery.removeEventListener('change', syncSystemTheme)
   }, [user])
 
-  const theme = user ? settings.theme : guestTheme
+  // User mode: ambil dari settings
+  useEffect(() => {
+    if (user && settings?.theme) {
+      applyTheme(settings.theme)
+      setIsLoading(false)
+    } else if (user && !settings) {
+      // Masih loading settings
+      setIsLoading(true)
+    }
+  }, [user, settings])
+
+  const theme = user ? settings?.theme : guestTheme
 
   const toggleTheme = useCallback(async () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark'
@@ -40,6 +57,6 @@ export function useTheme() {
   return {
     theme,
     toggleTheme,
-    loading: user ? loading.settings : false,
+    loading: isLoading || (user ? loading?.settings : false),
   }
 }

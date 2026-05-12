@@ -568,6 +568,7 @@ export default function ProfilePage() {
               )}
             </article>
 
+            {/* Login Activity */}
             <article className="rounded-3xl bg-white p-6 border border-slate-100 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
@@ -575,19 +576,13 @@ export default function ProfilePage() {
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-slate-800">Login Activity</p>
-                  <p className="text-xs text-slate-400">Recent sessions</p>
+                  <p className="text-xs text-slate-400">Last 4 sessions only</p> {/* 🔥 UBAH TEKS */}
                 </div>
               </div>
               <div className="space-y-2">
-                {loginHistory.map((login, index) => (
-                  <div
-                    key={login.id}
-                    className="flex items-center gap-3 py-2.5 px-3 rounded-2xl hover:bg-slate-50 transition-colors"
-                  >
-                    <span
-                      className={`inline-flex h-2 w-2 rounded-full ${index === 0 ? 'bg-emerald-400 animate-pulse' : 'bg-slate-300'
-                        }`}
-                    />
+                {loginHistory.slice(0, 4).map((login, index) => ( // 🔥 TAMBAH .slice(0,4)
+                  <div key={login.id} className="flex items-center gap-3 py-2.5 px-3 rounded-2xl hover:bg-slate-50 transition-colors">
+                    <span className={`inline-flex h-2 w-2 rounded-full ${index === 0 ? 'bg-emerald-400 animate-pulse' : 'bg-slate-300'}`} />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-slate-800">
                         {login.device || 'Unknown'} - {login.browser || 'Browser'}
