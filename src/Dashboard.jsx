@@ -65,8 +65,8 @@ function HeroStatsCard({ transactions, settings }) {
       <div className="relative z-10">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
           <div><div className="flex items-center gap-3 mb-2"><h2 className="text-sm font-medium text-slate-400">Total Balance</h2><button onClick={() => setIsBalanceVisible(!isBalanceVisible)} className="p-1 hover:bg-slate-800 rounded-lg">{isBalanceVisible ? <Eye size={14} className="text-slate-500" /> : <EyeOff size={14} className="text-slate-500" />}</button></div>
-          <h1 className="text-4xl md:text-5xl font-bold text-white">{isBalanceVisible ? `${symbol} ${formattedBalance}` : `${symbol} •••••••`}</h1>
-          <div className="flex items-center gap-2 mt-3"><span className={`text-sm font-semibold ${monthlyChange >= 0 ? "text-emerald-400" : "text-red-400"}`}>{monthlyChange >= 0 ? "+" : ""}{symbol} {Math.abs(monthlyChange).toLocaleString()}</span><span className="text-xs text-slate-500">this month</span></div></div>
+            <h1 className="text-4xl md:text-5xl font-bold text-white">{isBalanceVisible ? `${symbol} ${formattedBalance}` : `${symbol} •••••••`}</h1>
+            <div className="flex items-center gap-2 mt-3"><span className={`text-sm font-semibold ${monthlyChange >= 0 ? "text-emerald-400" : "text-red-400"}`}>{monthlyChange >= 0 ? "+" : ""}{symbol} {Math.abs(monthlyChange).toLocaleString()}</span><span className="text-xs text-slate-500">this month</span></div></div>
         </div>
         <div className="grid grid-cols-3 gap-3 pt-4 border-t border-slate-800">
           <div className="bg-slate-800/30 rounded-xl p-3"><p className="text-xs text-slate-500 mb-1">Monthly Income</p><p className="text-lg font-bold text-white">{symbol} {(monthlyIncome / 1000).toFixed(0)}k</p></div>
@@ -83,12 +83,12 @@ function MoneyPulseChart({ transactions }) {
   return (
     <div className="rounded-xl bg-slate-900/50 border border-slate-800 p-5 hover:border-emerald-500/30 transition-all">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"><div><h3 className="text-lg font-semibold text-white">Money Pulse</h3><p className="text-sm text-slate-400">Monthly cash flow</p></div>
-      <div className="flex items-center gap-4"><div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-xs text-slate-400">Income</span></div><div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-rose-500" /><span className="text-xs text-slate-400">Expense</span></div></div></div>
+        <div className="flex items-center gap-4"><div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500" /><span className="text-xs text-slate-400">Income</span></div><div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-rose-500" /><span className="text-xs text-slate-400">Expense</span></div></div></div>
       <div className="h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData}>
             <defs><linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.3} /><stop offset="95%" stopColor="#10b981" stopOpacity={0} /></linearGradient>
-            <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} /><stop offset="95%" stopColor="#f43f5e" stopOpacity={0} /></linearGradient></defs>
+              <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} /><stop offset="95%" stopColor="#f43f5e" stopOpacity={0} /></linearGradient></defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
             <XAxis dataKey="month" stroke="#64748b" fontSize={12} tickLine={false} />
             <YAxis stroke="#64748b" fontSize={12} tickLine={false} tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`} />
@@ -114,8 +114,8 @@ function RecentTransactions({ transactions, settings }) {
           <thead className="bg-slate-800/30"><tr><th className="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase">Merchant</th><th className="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase">Date</th><th className="text-right px-5 py-3 text-xs font-medium text-slate-500 uppercase">Amount</th></tr></thead>
           <tbody className="divide-y divide-slate-800">
             {recent.map(tx => (<tr key={tx.id} className="hover:bg-slate-800/30 transition-colors"><td className="px-5 py-3"><div><p className="text-sm font-medium text-white">{tx.merchant}</p><p className="text-xs text-slate-500 capitalize">{tx.category}</p></div></td>
-            <td className="px-5 py-3 text-sm text-slate-400">{new Date(tx.date).toLocaleDateString("id-ID")}</td>
-            <td className={`px-5 py-3 text-right text-sm font-semibold ${tx.type === "income" ? "text-emerald-400" : "text-white"}`}>{tx.type === "income" ? "+" : "-"}{symbol} {Math.abs(tx.amount).toLocaleString()}</td></tr>))}
+              <td className="px-5 py-3 text-sm text-slate-400">{new Date(tx.date).toLocaleDateString("id-ID")}</td>
+              <td className={`px-5 py-3 text-right text-sm font-semibold ${tx.type === "income" ? "text-emerald-400" : "text-white"}`}>{tx.type === "income" ? "+" : "-"}{symbol} {Math.abs(tx.amount).toLocaleString()}</td></tr>))}
           </tbody>
         </table>
       </div>
@@ -156,14 +156,84 @@ export default function Dashboard({ onNavigate }) {
   };
 
   const stats = useMemo(() => {
-    const monthlyIncome = transactions.filter(t => t.type === "income" && new Date(t.date).getMonth() === new Date().getMonth()).reduce((s, t) => s + t.amount, 0);
-    const monthlyExpense = transactions.filter(t => t.type === "expense" && new Date(t.date).getMonth() === new Date().getMonth()).reduce((s, t) => s + Math.abs(t.amount), 0);
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // ========== INCOME ==========
+    const monthlyIncome = transactions
+      .filter(t => t.type === "income" && new Date(t.date).getMonth() === currentMonth && new Date(t.date).getFullYear() === currentYear)
+      .reduce((s, t) => s + t.amount, 0);
+
+    const lastMonthIncome = transactions
+      .filter(t => t.type === "income" && new Date(t.date).getMonth() === currentMonth - 1 && new Date(t.date).getFullYear() === currentYear)
+      .reduce((s, t) => s + t.amount, 0);
+
+    let incomeChange, incomeSub;
+    if (lastMonthIncome === 0 && monthlyIncome > 0) {
+      incomeChange = "New";
+      incomeSub = "first month";
+    } else if (lastMonthIncome > 0) {
+      incomeChange = `${((monthlyIncome - lastMonthIncome) / lastMonthIncome * 100).toFixed(1)}%`;
+      incomeSub = "vs last month";
+    } else {
+      incomeChange = "0%";
+      incomeSub = "no data";
+    }
+
+    // ========== EXPENSE ==========
+    const monthlyExpense = transactions
+      .filter(t => t.type === "expense" && new Date(t.date).getMonth() === currentMonth && new Date(t.date).getFullYear() === currentYear)
+      .reduce((s, t) => s + Math.abs(t.amount), 0);
+
+    const lastMonthExpense = transactions
+      .filter(t => t.type === "expense" && new Date(t.date).getMonth() === currentMonth - 1 && new Date(t.date).getFullYear() === currentYear)
+      .reduce((s, t) => s + Math.abs(t.amount), 0);
+
+    let expenseChange, expenseSub;
+    if (lastMonthExpense === 0 && monthlyExpense > 0) {
+      expenseChange = "New";
+      expenseSub = "first month";
+    } else if (lastMonthExpense > 0) {
+      const changeNum = ((monthlyExpense - lastMonthExpense) / lastMonthExpense * 100).toFixed(1);
+      expenseChange = `${changeNum >= 0 ? "+" : ""}${changeNum}%`;
+      expenseSub = "vs last month";
+    } else {
+      expenseChange = "0%";
+      expenseSub = "no data";
+    }
+
     const balance = monthlyIncome - monthlyExpense;
     const symbol = settings?.currency === "USD" ? "$" : "Rp";
+
     return [
-      { label: "Balance", value: `${symbol} ${balance.toLocaleString()}`, change: `${((balance / monthlyIncome) * 100).toFixed(1)}%`, positive: balance >= 0, sub: "vs last month", icon: <TrendingUp size={18} />, iconColor: "bg-emerald-500/10 text-emerald-400" },
-      { label: "Income", value: `${symbol} ${monthlyIncome.toLocaleString()}`, change: "+12.5%", positive: true, sub: "this month", icon: <TrendingUp size={18} />, iconColor: "bg-emerald-500/10 text-emerald-400" },
-      { label: "Expenses", value: `${symbol} ${monthlyExpense.toLocaleString()}`, change: "-8.2%", positive: false, sub: "this month", icon: <TrendingDown size={18} />, iconColor: "bg-red-500/10 text-red-400" },
+      {
+        label: "Balance",
+        value: `${symbol} ${balance.toLocaleString()}`,
+        change: monthlyIncome > 0 ? `${((balance / monthlyIncome) * 100).toFixed(1)}%` : "0%",
+        positive: balance >= 0,
+        sub: "savings rate",
+        icon: <TrendingUp size={18} />,
+        iconColor: "bg-emerald-500/10 text-emerald-400"
+      },
+      {
+        label: "Income",
+        value: `${symbol} ${monthlyIncome.toLocaleString()}`,
+        change: incomeChange,
+        positive: incomeChange === "New" || (incomeChange !== "0%" && !incomeChange.toString().includes("-")),
+        sub: incomeSub,
+        icon: <TrendingUp size={18} />,
+        iconColor: "bg-emerald-500/10 text-emerald-400"
+      },
+      {
+        label: "Expenses",
+        value: `${symbol} ${monthlyExpense.toLocaleString()}`,
+        change: expenseChange,
+        positive: expenseChange !== "New" && expenseChange.toString().includes("-") && expenseChange !== "0%",
+        sub: expenseSub,
+        icon: <TrendingDown size={18} />,
+        iconColor: "bg-red-500/10 text-red-400"
+      },
     ];
   }, [transactions, settings]);
 
