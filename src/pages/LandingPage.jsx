@@ -50,9 +50,8 @@ export default function LandingPage({ onGetStarted, onLogin }) {
 
       {/* Navbar */}
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled ? "bg-slate-900/80 backdrop-blur-lg border-b border-slate-800" : "bg-transparent"
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-slate-900/80 backdrop-blur-lg border-b border-slate-800" : "bg-transparent"
+          }`}
       >
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -98,7 +97,7 @@ export default function LandingPage({ onGetStarted, onLogin }) {
           </h1>
 
           <p className="text-lg text-slate-400 max-w-2xl mx-auto mb-10">
-            Track expenses, pay bills, and achieve your financial goals with MoneyPulse. 
+            Track expenses, pay bills, and achieve your financial goals with MoneyPulse.
             The smart way to manage your personal finances.
           </p>
 

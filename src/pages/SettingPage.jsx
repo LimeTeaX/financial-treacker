@@ -25,9 +25,8 @@ function ToggleSwitch({ enabled, onChange }) {
   return (
     <button
       onClick={onChange}
-      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none ${
-        enabled ? "bg-emerald-500" : "bg-slate-700"
-      }`}
+      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none ${enabled ? "bg-emerald-500" : "bg-slate-700"
+        }`}
     >
       <span className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${enabled ? "translate-x-6" : "translate-x-1"}`} />
     </button>
@@ -41,11 +40,10 @@ function RadioGroup({ options, selected, onChange }) {
         <button
           key={option.value}
           onClick={() => onChange(option.value)}
-          className={`rounded-xl px-4 py-2 text-xs font-medium transition-all duration-200 ${
-            selected === option.value
+          className={`rounded-xl px-4 py-2 text-xs font-medium transition-all duration-200 ${selected === option.value
               ? "bg-emerald-500 text-white shadow-sm"
               : "bg-slate-800/50 text-slate-400 hover:bg-slate-700 hover:text-white border border-slate-700"
-          }`}
+            }`}
         >
           {option.label}
         </button>

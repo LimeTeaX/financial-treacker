@@ -145,21 +145,19 @@ export default function AuthPage({ defaultMode = "login", onBack }) {
             <div className="flex gap-2 mb-6 bg-slate-800/50 p-1.5 rounded-xl">
               <button
                 onClick={() => setIsLogin(true)}
-                className={`flex-1 py-2.5 rounded-lg transition-all duration-300 text-sm font-semibold ${
-                  isLogin
+                className={`flex-1 py-2.5 rounded-lg transition-all duration-300 text-sm font-semibold ${isLogin
                     ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/50"
                     : "text-slate-400 hover:text-white"
-                }`}
+                  }`}
               >
                 Sign In
               </button>
               <button
                 onClick={() => setIsLogin(false)}
-                className={`flex-1 py-2.5 rounded-lg transition-all duration-300 text-sm font-semibold ${
-                  !isLogin
+                className={`flex-1 py-2.5 rounded-lg transition-all duration-300 text-sm font-semibold ${!isLogin
                     ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/50"
                     : "text-slate-400 hover:text-white"
-                }`}
+                  }`}
               >
                 Sign Up
               </button>

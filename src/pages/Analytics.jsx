@@ -39,20 +39,20 @@ const getChartData = (transactions, filter) => {
   const { startDate, endDate, groupBy } = getFilterConfig(filter);
   const dataMap = new Map();
   const filtered = transactions.filter(tx => tx.date && new Date(tx.date) >= startDate && new Date(tx.date) <= endDate);
-  
+
   filtered.forEach(tx => {
     const date = new Date(tx.date);
     let key;
     if (groupBy === "day") key = date.toISOString().split("T")[0];
     else if (groupBy === "week") key = `${date.getFullYear()}-${date.getMonth()}-week${getWeekOfMonth(date)}`;
     else key = `${date.getFullYear()}-${date.getMonth()}`;
-    
+
     if (!dataMap.has(key)) dataMap.set(key, { label: formatLabel(date, groupBy), date, income: 0, expense: 0 });
     const entry = dataMap.get(key);
     if (tx.type === "income") entry.income += Math.abs(tx.amount);
     else entry.expense += Math.abs(tx.amount);
   });
-  
+
   return Array.from(dataMap.values()).sort((a, b) => a.date - b.date);
 };
 
@@ -113,7 +113,7 @@ export default function Analytics() {
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData}>
               <defs><linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.3} /><stop offset="95%" stopColor="#10b981" stopOpacity={0} /></linearGradient>
-              <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} /><stop offset="95%" stopColor="#ef4444" stopOpacity={0} /></linearGradient></defs>
+                <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} /><stop offset="95%" stopColor="#ef4444" stopOpacity={0} /></linearGradient></defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
               <XAxis dataKey="label" stroke="#64748b" fontSize={12} tickLine={false} angle={-45} textAnchor="end" height={60} />
               <YAxis stroke="#64748b" fontSize={12} tickLine={false} tickFormatter={(v) => `${symbol}${(v / 1000).toFixed(0)}k`} />
@@ -134,9 +134,27 @@ export default function Analytics() {
           {categoryData.length === 0 ? <div className="flex items-center justify-center h-80 text-slate-500">No expense data</div> : (
             <div className="flex flex-col md:flex-row items-center gap-6">
               <ResponsiveContainer width="100%" height={250}>
-                <PieChart><Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={2} dataKey="value" label={({ percent }) => `${(percent * 100).toFixed(0)}%`} labelLine={false}>{categoryData.map((entry, idx) => <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />)}</Pie>
-                <Tooltip contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #334155", borderRadius: "12px" }} formatter={(v) => [`${symbol} ${v.toLocaleString(locale)}`, ""]} />
-              </PieChart>
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="value"
+                    // label dihilangkan
+                    labelLine={false}
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #334155", borderRadius: "12px" }}
+                    formatter={(v) => [`${symbol} ${v.toLocaleString(locale)}`, ""]}
+                  />
+                </PieChart>
               </ResponsiveContainer>
               <div className="space-y-2 w-full">{categoryData.slice(0, 5).map((cat, i) => (<div key={cat.name} className="flex items-center justify-between text-sm"><div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} /><span className="text-slate-300">{cat.name}</span></div><span className="text-white font-semibold">{cat.percentage}%</span></div>))}</div>
             </div>

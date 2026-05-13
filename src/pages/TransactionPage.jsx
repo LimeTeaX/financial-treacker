@@ -62,7 +62,7 @@ function TransactionCard({ tx, settings, onEdit, onDelete }) {
             <Trash2 size={14} />
           </button>
           <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${tx.status === "Completed" ? "bg-emerald-500/10 text-emerald-400" :
-              tx.status === "Pending" ? "bg-yellow-500/10 text-yellow-500" : "bg-red-500/10 text-red-400"
+            tx.status === "Pending" ? "bg-yellow-500/10 text-yellow-500" : "bg-red-500/10 text-red-400"
             }`}>
             {tx.status}
           </span>
@@ -232,7 +232,7 @@ export default function TransactionPage() {
       <div className="lg:hidden space-y-3">
         {paginatedTxns.map((tx) => (
           // ✅ YANG BENAR
-<TransactionCard key={tx.id} tx={tx} settings={settings} onEdit={handleEdit} onDelete={handleDeleteClick} />
+          <TransactionCard key={tx.id} tx={tx} settings={settings} onEdit={handleEdit} onDelete={handleDeleteClick} />
         ))}
       </div>
 
@@ -271,7 +271,7 @@ export default function TransactionPage() {
                     </td>
                     <td className="px-4 py-3">
                       <span className={`text-xs px-2 py-1 rounded-full ${tx.status === "Completed" ? "bg-emerald-500/20 text-emerald-400" :
-                          tx.status === "Pending" ? "bg-yellow-500/20 text-yellow-500" : "bg-red-500/20 text-red-400"
+                        tx.status === "Pending" ? "bg-yellow-500/20 text-yellow-500" : "bg-red-500/20 text-red-400"
                         }`}>
                         {tx.status}
                       </span>
@@ -448,12 +448,12 @@ export default function TransactionPage() {
         </div>
       )}
       <ConfirmModal
-  isOpen={showDeleteModal}
-  onClose={() => setShowDeleteModal(false)}
-  onConfirm={handleConfirmDelete}
-  title="Delete Transaction"
-  message="Are you sure you want to delete this transaction? This action cannot be undone."
-/>
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Transaction"
+        message="Are you sure you want to delete this transaction? This action cannot be undone."
+      />
     </div>
   );
 }

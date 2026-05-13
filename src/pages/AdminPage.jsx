@@ -142,9 +142,8 @@ export default function AdminPage() {
           <div className="rounded-lg bg-slate-800/30 p-4">
             <p className="text-xs text-slate-400 mb-1">Role</p>
             <div className="flex items-center gap-2">
-              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                role === "admin" ? "bg-emerald-500/10 text-emerald-400" : "bg-slate-800 text-slate-400"
-              }`}>
+              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${role === "admin" ? "bg-emerald-500/10 text-emerald-400" : "bg-slate-800 text-slate-400"
+                }`}>
                 {role || "user"}
               </span>
               {role === "admin" && (

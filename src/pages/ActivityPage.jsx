@@ -305,7 +305,7 @@ export default function ActivityPage() {
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2"><div className={`p-1.5 rounded-lg ${cat.iconBg}`}><cat.icon size={12} /></div><span className="text-sm font-medium text-white">{cat.category}</span></div>
                     <div className="flex items-center gap-2"><span className="text-xs text-slate-400">{symbol} {(cat.thisMonth / 1000).toFixed(0)}k / {symbol} {(cat.limit / 1000).toFixed(0)}k</span>
-                    {cat.change !== 0 && <span className={`flex items-center gap-0.5 text-[10px] font-semibold ${isIncrease ? "text-red-400" : "text-emerald-400"}`}>{isIncrease ? <ChevronUp size={10} /> : <ChevronDown size={10} />}{Math.abs(cat.change)}%</span>}</div>
+                      {cat.change !== 0 && <span className={`flex items-center gap-0.5 text-[10px] font-semibold ${isIncrease ? "text-red-400" : "text-emerald-400"}`}>{isIncrease ? <ChevronUp size={10} /> : <ChevronDown size={10} />}{Math.abs(cat.change)}%</span>}</div>
                   </div>
                   <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden"><div className={`h-full rounded-full ${cat.color} transition-all`} style={{ width: `${Math.min(cat.percent, 100)}%` }} /></div>
                 </div>
