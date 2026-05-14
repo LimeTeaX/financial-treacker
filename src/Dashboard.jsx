@@ -155,87 +155,59 @@ export default function Dashboard({ onNavigate }) {
     if (success) { setIsModalOpen(false); setForm({ merchant: "", category: "Food", amount: "", type: "expense" }); showToast("Transaction added successfully!", "success"); }
   };
 
-  const stats = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+const stats = useMemo(() => {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const symbol = settings?.currency === "USD" ? "$" : "Rp";
 
-    // ========== INCOME ==========
-    const monthlyIncome = transactions
-      .filter(t => t.type === "income" && new Date(t.date).getMonth() === currentMonth && new Date(t.date).getFullYear() === currentYear)
-      .reduce((s, t) => s + t.amount, 0);
+  // Income bulan ini
+  const monthlyIncome = transactions
+    .filter(t => t.type === "income" && new Date(t.date).getMonth() === currentMonth && new Date(t.date).getFullYear() === currentYear)
+    .reduce((s, t) => s + t.amount, 0);
 
-    const lastMonthIncome = transactions
-      .filter(t => t.type === "income" && new Date(t.date).getMonth() === currentMonth - 1 && new Date(t.date).getFullYear() === currentYear)
-      .reduce((s, t) => s + t.amount, 0);
+  const monthlyExpense = transactions
+    .filter(t => t.type === "expense" && new Date(t.date).getMonth() === currentMonth && new Date(t.date).getFullYear() === currentYear)
+    .reduce((s, t) => s + Math.abs(t.amount), 0);
 
-    let incomeChange, incomeSub;
-    if (lastMonthIncome === 0 && monthlyIncome > 0) {
-      incomeChange = "New";
-      incomeSub = "first month";
-    } else if (lastMonthIncome > 0) {
-      incomeChange = `${((monthlyIncome - lastMonthIncome) / lastMonthIncome * 100).toFixed(1)}%`;
-      incomeSub = "vs last month";
-    } else {
-      incomeChange = "0%";
-      incomeSub = "no data";
-    }
+  const balance = monthlyIncome - monthlyExpense;
 
-    // ========== EXPENSE ==========
-    const monthlyExpense = transactions
-      .filter(t => t.type === "expense" && new Date(t.date).getMonth() === currentMonth && new Date(t.date).getFullYear() === currentYear)
-      .reduce((s, t) => s + Math.abs(t.amount), 0);
+  // ========== HITUNG DAILY INTEREST ==========
+  const totalBalance = transactions.reduce((acc, tx) => {
+    return acc + (tx.type === "income" ? tx.amount : -Math.abs(tx.amount));
+  }, 0);
+  const dailyInterest = (Math.max(0, totalBalance) * 0.025) / 365;
 
-    const lastMonthExpense = transactions
-      .filter(t => t.type === "expense" && new Date(t.date).getMonth() === currentMonth - 1 && new Date(t.date).getFullYear() === currentYear)
-      .reduce((s, t) => s + Math.abs(t.amount), 0);
-
-    let expenseChange, expenseSub;
-    if (lastMonthExpense === 0 && monthlyExpense > 0) {
-      expenseChange = "New";
-      expenseSub = "first month";
-    } else if (lastMonthExpense > 0) {
-      const changeNum = ((monthlyExpense - lastMonthExpense) / lastMonthExpense * 100).toFixed(1);
-      expenseChange = `${changeNum >= 0 ? "+" : ""}${changeNum}%`;
-      expenseSub = "vs last month";
-    } else {
-      expenseChange = "0%";
-      expenseSub = "no data";
-    }
-
-    const balance = monthlyIncome - monthlyExpense;
-    const symbol = settings?.currency === "USD" ? "$" : "Rp";
-
-    return [
-      {
-        label: "Balance",
-        value: `${symbol} ${balance.toLocaleString()}`,
-        change: monthlyIncome > 0 ? `${((balance / monthlyIncome) * 100).toFixed(1)}%` : "0%",
-        positive: balance >= 0,
-        sub: "savings rate",
-        icon: <TrendingUp size={18} />,
-        iconColor: "bg-emerald-500/10 text-emerald-400"
-      },
-      {
-        label: "Income",
-        value: `${symbol} ${monthlyIncome.toLocaleString()}`,
-        change: incomeChange,
-        positive: incomeChange === "New" || (incomeChange !== "0%" && !incomeChange.toString().includes("-")),
-        sub: incomeSub,
-        icon: <TrendingUp size={18} />,
-        iconColor: "bg-emerald-500/10 text-emerald-400"
-      },
-      {
-        label: "Expenses",
-        value: `${symbol} ${monthlyExpense.toLocaleString()}`,
-        change: expenseChange,
-        positive: expenseChange !== "New" && expenseChange.toString().includes("-") && expenseChange !== "0%",
-        sub: expenseSub,
-        icon: <TrendingDown size={18} />,
-        iconColor: "bg-red-500/10 text-red-400"
-      },
-    ];
-  }, [transactions, settings]);
+  return [
+    {
+      label: "Balance",
+      value: `${symbol} ${balance.toLocaleString()}`,
+      change: `${((balance / monthlyIncome) * 100).toFixed(1)}%`,
+      positive: balance >= 0,
+      sub: "savings rate",
+      icon: <Wallet size={18} />,
+      iconColor: "bg-emerald-500/10 text-emerald-400"
+    },
+    {
+      label: "Daily Interest",  // ← GANTI DARI "Income"
+      value: `${symbol} ${dailyInterest.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/day`,
+      change: "2.5% p.a",
+      positive: true,
+      sub: "cair setiap hari",
+      icon: <TrendingUp size={18} />,
+      iconColor: "bg-blue-500/10 text-blue-400"
+    },
+    {
+      label: "Expenses",
+      value: `${symbol} ${monthlyExpense.toLocaleString()}`,
+      change: `${((monthlyExpense / monthlyIncome) * 100).toFixed(1)}%`,
+      positive: false,
+      sub: "of income",
+      icon: <TrendingDown size={18} />,
+      iconColor: "bg-red-500/10 text-red-400"
+    },
+  ];
+}, [transactions, settings]);
 
   if (transactions.length === 0) {
     return <div className="max-w-4xl mx-auto flex justify-center py-20"><div className="text-center"><p className="text-slate-400 mb-2">No transactions yet</p><button onClick={() => setIsModalOpen(true)} className="text-emerald-400 hover:text-emerald-300 text-sm">Add your first transaction</button></div></div>;
